@@ -4,7 +4,9 @@ import (
 	"fmt"
 )
 
-const INST_SIZE = 0xFF
+const (
+	INST_SIZE = 0xFF
+)
 
 type Register struct {
 	// TODO Add comments
@@ -29,13 +31,11 @@ func (r *Register) GetFlagZ() bool {
 }
 
 func (r *Register) SetFlagZ(value bool) {
-	var mask uint8 = 0xF0
-
-	if !value {
-		mask = 0b01110000
+	if value {
+		r.F |= 0b10000000
+	} else {
+		r.F &= 0b01110000
 	}
-
-	r.F &= mask
 }
 
 func (r *Register) GetFlagN() bool {
@@ -43,13 +43,11 @@ func (r *Register) GetFlagN() bool {
 }
 
 func (r *Register) SetFlagN(value bool) {
-	var mask uint8 = 0xF0
-
-	if !value {
-		mask = 0b10110000
+	if value {
+		r.F |= 0b01000000
+	} else {
+		r.F &= 0b10110000
 	}
-
-	r.F &= mask
 }
 
 func (r *Register) GetFlagH() bool {
@@ -57,13 +55,11 @@ func (r *Register) GetFlagH() bool {
 }
 
 func (r *Register) SetFlagH(value bool) {
-	var mask uint8 = 0xF0
-
-	if !value {
-		mask = 0b11010000
+	if value {
+		r.F |= 0b00100000
+	} else {
+		r.F &= 0b11010000
 	}
-
-	r.F &= mask
 }
 
 func (r *Register) GetFlagC() bool {
@@ -71,19 +67,33 @@ func (r *Register) GetFlagC() bool {
 }
 
 func (r *Register) SetFlagC(value bool) {
-	var mask uint8 = 0xF0
-
-	if !value {
-		mask = 0b11100000
+	if value {
+		r.F |= 0b00010000
+	} else {
+		r.F &= 0b11100000
 	}
-
-	r.F &= mask
 }
 
-// Affects Flags Z and H according to value
-func (r *Register) AffectFlagZH(value uint8) {
-	r.SetFlagZ(value == 0)
-	r.SetFlagH(value&0b1111 == 0)
+// Affects Flags Z and H according to current and new value
+func (r *Register) AffectFlagZH(curVal, newVal uint8) {
+	r.SetFlagZ(newVal == 0)
+	// when bit 3 overflow
+	halfCarry := (curVal&0b1111 == 0b1111) && (newVal&0b1111 == 0)
+	r.SetFlagH(halfCarry)
+}
+
+// Affects Flags H and C according to current and new value
+func (r *Register) AffectFlagHC(curVal, newVal uint8) {
+	halfCarry := (curVal&0b1111 == 0b1111) && (newVal&0b1111 == 0)
+	r.SetFlagH(halfCarry)
+	carry := (curVal&0b11110000 == 0b11110000) && (newVal&0b11110000 == 0)
+	r.SetFlagC(carry)
+}
+
+// Affects Flags H and C according to 16 bit current and new value
+// H is affected by overflow in bit 11, C is affected by overflow in bit 15
+func (r *Register) AffectFlagHC16(curVal, newVal uint16) {
+	r.AffectFlagHC(uint8(curVal>>8), uint8(newVal>>8))
 }
 
 func (r *Register) GetBC() uint16 {
@@ -114,12 +124,14 @@ type Instruction struct {
 	execute func() string
 }
 
-var bus Bus
-var ticks uint
-var reg *Register
-var curOP uint8
-var nextOP uint8
-var inst [INST_SIZE]Instruction
+var (
+	bus    Bus
+	ticks  uint
+	reg    *Register
+	curOP  uint8
+	nextOP uint8
+	inst   [INST_SIZE]Instruction
+)
 
 //TODO Add setters and getters for HI LO access
 
@@ -138,9 +150,9 @@ func initInstructions() {
 	// LD BC, $FFFF
 	inst[0x01] = Instruction{3, ldbc}
 	// LD (BC), A
-	inst[0x02] = Instruction{1, ldbca}
+	inst[0x02] = Instruction{2, ldbca}
 	// INC BC
-	inst[0x03] = Instruction{3, incbc}
+	inst[0x03] = Instruction{2, incbc}
 	// INC B
 	inst[0x04] = Instruction{1, incb}
 	// DEC B
@@ -150,9 +162,11 @@ func initInstructions() {
 	// RLCA
 	inst[0x07] = Instruction{1, rlca}
 	// LD ($FFFF), SP
-	inst[0x08] = Instruction{3, ldmemsp}
+	inst[0x08] = Instruction{5, ldmemsp}
 	// ADD HL, BC
-	inst[0x09] = Instruction{1, addhlbc}
+	inst[0x09] = Instruction{2, addhlbc}
+	// LD A, (BC)
+	inst[0x0A] = Instruction{2, ldabc}
 }
 
 // Emulates machine ticks (m-ticks)
@@ -201,16 +215,16 @@ func incbc() string {
 }
 
 func incb() string {
+	reg.AffectFlagZH(reg.B, reg.B+1)
 	reg.B++
-	reg.AffectFlagZH(reg.B)
 	reg.SetFlagN(false)
 
 	return "INC B"
 }
 
 func decb() string {
+	reg.AffectFlagZH(reg.B, reg.B-1)
 	reg.B--
-	reg.AffectFlagZH(reg.B)
 	reg.SetFlagN(true)
 
 	return "DEC B"
@@ -237,7 +251,18 @@ func ldmemsp() string {
 }
 
 func addhlbc() string {
-	// value := uint8(bus.read16(reg.GetBC()))
+	curVal := reg.GetHL()
+	nextVal := curVal + reg.GetBC()
+	reg.SetHL(nextVal)
+	reg.SetFlagN(false)
+	reg.AffectFlagHC16(curVal, nextVal)
 
-	return ""
+	return "ADD HL, BC"
+}
+
+func ldabc() string {
+	pos := reg.GetBC()
+	reg.A = bus.read(pos)
+
+	return "LD A, (BC)"
 }
