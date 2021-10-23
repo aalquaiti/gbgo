@@ -1,4 +1,4 @@
-package gbgo
+package cpu
 
 import "testing"
 
@@ -279,8 +279,8 @@ func TestRegisterAffectHC16(t *testing.T) {
 }
 
 func TestRegisterGetBC(t *testing.T) {
-	reg.B = 0xFF
-	reg.C = 0xFE
+	reg.B = 0xFE
+	reg.C = 0xFF
 	var expected uint16 = 0xFEFF
 	var actual uint16 = reg.GetBC()
 
@@ -293,6 +293,29 @@ func TestRegisterGetBC(t *testing.T) {
 func TestRegisterSetBC(t *testing.T) {
 	var expected uint16 = 0xFEFF
 	reg.SetBC(expected)
+	var actual = reg.GetBC()
+
+	if expected != actual {
+		t.Errorf("Register values are not matched.\nExpected = 0x%X"+
+			"\nActual = 0x%X", expected, actual)
+	}
+}
+
+func TestT016(t *testing.T) {
+	var low uint8 = 0xFF
+	var high uint8 = 0xFE
+	var expected uint16 = 0xFEFF
+	var actual uint16 = to16(high, low)
+
+	if expected != actual {
+		t.Errorf("Function to16 not working as expected.\nExpected = 0x%X"+
+			"\nActual = 0x%X", expected, actual)
+	}
+}
+
+func TestLdReg16(t *testing.T) {
+	var expected uint16 = 0xFEFF
+	ldReg16(&reg.B, &reg.C, expected)
 	var actual = reg.GetBC()
 
 	if expected != actual {
