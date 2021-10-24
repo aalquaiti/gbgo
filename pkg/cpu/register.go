@@ -88,6 +88,16 @@ func (r *Register) AffectFlagHC16(curVal, newVal uint16) {
 	r.AffectFlagHC(uint8(curVal>>8), uint8(newVal>>8))
 }
 
+// Affects Flags Z, H and C according to current and new value
+func (r *Register) AffectFlagZHC(curVal, newVal uint8) {
+	r.SetFlagZ(newVal == 0)
+	// when bit 3 overflow
+	halfCarry := (curVal&0b1111 == 0b1111) && (newVal&0b1111 == 0)
+	r.SetFlagH(halfCarry)
+	carry := (curVal&0b11110000 == 0b11110000) && (newVal&0b11110000 == 0)
+	r.SetFlagC(carry)
+}
+
 func (r *Register) GetBC() uint16 {
 	return to16(r.B, r.C)
 }
