@@ -315,7 +315,7 @@ func TestT016(t *testing.T) {
 
 func TestLdReg16(t *testing.T) {
 	var expected uint16 = 0xFEFF
-	ldReg16(&reg.B, &reg.C, expected)
+	ldmem16(&reg.B, &reg.C, expected)
 	var actual = reg.GetBC()
 
 	if expected != actual {

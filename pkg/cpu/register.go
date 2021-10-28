@@ -103,7 +103,7 @@ func (r *Register) GetBC() uint16 {
 }
 
 func (r *Register) SetBC(value uint16) {
-	ldReg16(&r.B, &r.C, value)
+	ldmem16(&r.B, &r.C, value)
 }
 
 func (r *Register) GetDE() uint16 {
@@ -111,7 +111,7 @@ func (r *Register) GetDE() uint16 {
 }
 
 func (r *Register) SetDE(value uint16) {
-	ldReg16(&r.D, &r.E, value)
+	ldmem16(&r.D, &r.E, value)
 }
 
 func (r *Register) GetHL() uint16 {
@@ -119,7 +119,7 @@ func (r *Register) GetHL() uint16 {
 }
 
 func (r *Register) SetHL(value uint16) {
-	ldReg16(&r.H, &r.L, value)
+	ldmem16(&r.H, &r.L, value)
 }
 
 // Helper functions
@@ -129,9 +129,15 @@ func to16(rHigh, rLow uint8) uint16 {
 	return uint16(rHigh)<<8 + uint16(rLow)
 }
 
-// Load 16-bit value to a 16-bit Register.
-// Register represented two 8-bit high and low registers
-func ldReg16(rHigh, rLow *uint8, value uint16) {
+// Convert 16-bit value to an 8-bit tuple.
+// The first return byte is the least significant byte (low)
+// the second return byte is the most significant byte (high)
+func from16(value uint16) (uint8, uint8) {
+	return uint8(value), uint8(value >> 8)
+}
+
+// Load 16-bit value to a two 8-bit memory location.
+func ldmem16(rHigh, rLow *uint8, value uint16) {
 	*rLow = uint8(value)
 	*rHigh = uint8(value >> 8)
 }
