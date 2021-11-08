@@ -4,9 +4,11 @@ type Register struct {
 	// TODO Add comments
 	A, F, B, C, D, E, H, L uint8
 	SP, PC                 uint16
+	// Interrupt Master Enable Flag
+	IME bool
 }
 
-// Functions related to Flag REgister (F)
+// Functions related to Flag Register (F)
 
 // Returns F Flag value, with first four bits always set to Zero
 func (r *Register) GetF() uint8 {

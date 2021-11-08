@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/aalquaiti/gbgo/pkg"
+	"github.com/aalquaiti/gbgo/io"
 )
 
 const (
-	INST_SIZE = 0x100
+	INST_SIZE = 0x100      // Instruction Size
+	DMG_HZ    = 0x100000   // Game Boy Frequency (m-ticks)
+	CGB_HZ    = DMG_HZ * 2 // Game Boy Color Frequency (m-ticks)
+	DIV_RATE  = 0xFFF      // Dividor Increment Rate
 )
 
 type Instruction struct {
@@ -17,18 +20,27 @@ type Instruction struct {
 	execute func() string
 }
 
+// TODO Implement Modes, including CGB double speed mode
+type Mode int
+
 var (
-	bus    pkg.Bus
-	ticks  uint
-	reg    *Register
-	curOP  uint8
-	nextOP uint8
-	inst   [INST_SIZE]Instruction
+	bus   io.Bus
+	ticks uint // m-ticks remaining for an instruction
+	count uint // m-ticks count. Helps with timer functionality
+	reg   *Register
+	curOP uint8 // Current Op to execute. Used in cpu fetch phase
+	inst  [INST_SIZE]Instruction
 )
 
-//TODO Add setters and getters for HI LO access
+// Variables that should be treated as immutable.
+// Access should be through functions
+var (
+	cpuFreq uint32
+)
 
-//TODO the lower four bits of Flag Registerare always 0
+func CPU_FREQ() uint32 {
+	return cpuFreq
+}
 
 func init() {
 
@@ -448,141 +460,223 @@ func initInstructions() {
 	// ADD A, $FF
 	inst[0xC6] = Instruction{2, adda8}
 	// RST $00
-	// inst[0xC7] = Instruction{4, rst00}
-	// // RET Z
-	// inst[0xC8] = Instruction{2, retz}
-	// // RET
-	// inst[0xC9] = Instruction{4, ret}
-	// // JP Z, $FFFF
-	// inst[0xCA] = Instruction{3, jpz}
-	// // PREFIX CB
-	// inst[0xCB] = Instruction{1, prefixcb}
-	// // CALL Z, $FFFF
-	// inst[0xCC] = Instruction{3, callz}
-	// // CALL $FFFF
-	// inst[0xCD] = Instruction{6, call}
-	// // ADC A, $FF
-	// inst[0xCE] = Instruction{2, adca8}
-	// // RST $08
-	// inst[0xCF] = Instruction{4, rst08}
+	inst[0xC7] = Instruction{4, rst00}
+	// RET Z
+	inst[0xC8] = Instruction{2, retz}
+	// RET
+	inst[0xC9] = Instruction{4, ret}
+	// JP Z, $FFFF
+	inst[0xCA] = Instruction{3, jpz}
+	// PREFIX CB
+	inst[0xCB] = Instruction{1, prefixcb}
+	// CALL Z, $FFFF
+	inst[0xCC] = Instruction{3, callz}
+	// CALL $FFFF
+	inst[0xCD] = Instruction{6, call}
+	// ADC A, $FF
+	inst[0xCE] = Instruction{2, adca8}
+	// RST $08
+	inst[0xCF] = Instruction{4, rst08}
 
-	// // RET NC
-	// inst[0xD0] = Instruction{2, retnc}
-	// // POP DE
-	// inst[0xD1] = Instruction{3, popde}
-	// // JP NC, $FFFF
-	// inst[0xD2] = Instruction{1, jpnc}
-	// //
-	// inst[0xD3] = Instruction{0, illegalop}
-	// // CALL NC, $FFFF
-	// inst[0xD4] = Instruction{3, callnc}
-	// // PUSH DE
-	// inst[0xD5] = Instruction{4, pushde}
-	// // SUB A, $FF
-	// inst[0xD6] = Instruction{2, suba8}
-	// // RST $10
-	// inst[0xD7] = Instruction{4, rst10}
-	// // RET C
-	// inst[0xD8] = Instruction{2, retc}
-	// // RETI
-	// inst[0xD9] = Instruction{4, reti}
-	// // JP C, $FFFF
-	// inst[0xDA] = Instruction{3, jpc}
-	// //
-	// inst[0xDB] = Instruction{0, illegalop}
-	// // CALL C, $FFFF
-	// inst[0xDC] = Instruction{3, callc}
-	// //
-	// inst[0xDD] = Instruction{0, illegalop}
-	// // SBC A, $FF
-	// inst[0xDE] = Instruction{2, sbca8}
-	// // RST $18
-	// inst[0xDF] = Instruction{4, rst18}
+	// RET NC
+	inst[0xD0] = Instruction{2, retnc}
+	// POP DE
+	inst[0xD1] = Instruction{3, popde}
+	// JP NC, $FFFF
+	inst[0xD2] = Instruction{1, jpnc}
+	//
+	inst[0xD3] = Instruction{0, illegalop}
+	// CALL NC, $FFFF
+	inst[0xD4] = Instruction{3, callnc}
+	// PUSH DE
+	inst[0xD5] = Instruction{4, pushde}
+	// SUB A, $FF
+	inst[0xD6] = Instruction{2, suba8}
+	// RST $10
+	inst[0xD7] = Instruction{4, rst10}
+	// RET C
+	inst[0xD8] = Instruction{2, retc}
+	// RETI
+	inst[0xD9] = Instruction{4, reti}
+	// JP C, $FFFF
+	inst[0xDA] = Instruction{3, jpc}
+	//
+	inst[0xDB] = Instruction{0, illegalop}
+	// CALL C, $FFFF
+	inst[0xDC] = Instruction{3, callc}
+	//
+	inst[0xDD] = Instruction{0, illegalop}
+	// SBC A, $FF
+	inst[0xDE] = Instruction{2, sbca8}
+	// RST $18
+	inst[0xDF] = Instruction{4, rst18}
 
-	// // LD (FF00 + $FF), A
-	// inst[0xE0] = Instruction{2, ldmema}
-	// // POP HL
-	// inst[0xE1] = Instruction{3, pophl}
-	// // LD (FF00 + C), A
-	// inst[0xE2] = Instruction{1, ldmemca}
-	// //
-	// inst[0xE3] = Instruction{0, illegalop}
-	// //
-	// inst[0xE4] = Instruction{3, illegalop}
-	// // PUSH HL
-	// inst[0xE5] = Instruction{4, pushhl}
-	// // AND A, $FF
-	// inst[0xE6] = Instruction{2, anda8}
-	// // RST $20
-	// inst[0xE7] = Instruction{4, rst20}
-	// // ADD SP, $FF
-	// inst[0xE8] = Instruction{2, addsp}
-	// // JP HL
-	// inst[0xE9] = Instruction{4, jphl}
-	// // LD ($FFFF), A
-	// inst[0xEA] = Instruction{3, ldmema}
-	// //
-	// inst[0xEB] = Instruction{0, illegalop}
-	// //
-	// inst[0xEC] = Instruction{3, illegalop}
-	// //
-	// inst[0xED] = Instruction{0, illegalop}
-	// // XOR A, $FF
-	// inst[0xEE] = Instruction{2, xora8}
-	// // RST $28
-	// inst[0xEF] = Instruction{4, rst28}
+	// LD (FF00 + $FF), A
+	inst[0xE0] = Instruction{2, ldff8a}
+	// POP HL
+	inst[0xE1] = Instruction{3, pophl}
+	// LD (FF00 + C), A
+	inst[0xE2] = Instruction{1, ldffca}
+	//
+	inst[0xE3] = Instruction{0, illegalop}
+	//
+	inst[0xE4] = Instruction{3, illegalop}
+	// PUSH HL
+	inst[0xE5] = Instruction{4, pushhl}
+	// AND A, $FF
+	inst[0xE6] = Instruction{2, anda8}
+	// RST $20
+	inst[0xE7] = Instruction{4, rst20}
+	// ADD SP, $FF
+	inst[0xE8] = Instruction{2, addsp}
+	// JP HL
+	inst[0xE9] = Instruction{4, jphl}
+	// LD ($FFFF), A
+	inst[0xEA] = Instruction{3, ld16a}
+	//
+	inst[0xEB] = Instruction{0, illegalop}
+	//
+	inst[0xEC] = Instruction{3, illegalop}
+	//
+	inst[0xED] = Instruction{0, illegalop}
+	// XOR A, $FF
+	inst[0xEE] = Instruction{2, xora8}
+	// RST $28
+	inst[0xEF] = Instruction{4, rst28}
 
-	// // LD A, (FF00 + $FF)
-	// inst[0xF0] = Instruction{2, ldamem}
-	// // POP AF
-	// inst[0xF1] = Instruction{3, popaf}
-	// // LD A, (FF00 + C)
-	// inst[0xF2] = Instruction{1, ldamemc}
-	// // DI
-	// inst[0xF3] = Instruction{0, di}
-	// //
-	// inst[0xF4] = Instruction{3, illegalop}
-	// // PUSH AF
-	// inst[0xF5] = Instruction{4, pushaf}
-	// // OR A, $FF
-	// inst[0xF6] = Instruction{2, ora8}
-	// // RST $30
-	// inst[0xF7] = Instruction{4, rst30}
-	// // LD HP, SP + $FF
-	// inst[0xF8] = Instruction{2, ldhpsp8}
-	// // JP SP, HL
-	// inst[0xF9] = Instruction{4, jpsphl}
-	// // LD A, ($FFFF)
-	// inst[0xFA] = Instruction{3, lda16}
-	// // EI
-	// inst[0xFB] = Instruction{0, ei}
-	// //
-	// inst[0xFC] = Instruction{3, illegalop}
-	// //
-	// inst[0xFD] = Instruction{0, illegalop}
-	// // CP A, $FF
-	// inst[0xFE] = Instruction{2, cpa8}
-	// // RST $38
-	// inst[0xFF] = Instruction{4, rst38}
+	// LD A, (FF00 + $FF)
+	inst[0xF0] = Instruction{2, ldaff8}
+	// POP AF
+	inst[0xF1] = Instruction{3, popaf}
+	// LD A, (FF00 + C)
+	inst[0xF2] = Instruction{1, ldaffc}
+	// DI
+	inst[0xF3] = Instruction{0, di}
+	//
+	inst[0xF4] = Instruction{3, illegalop}
+	// PUSH AF
+	inst[0xF5] = Instruction{4, pushaf}
+	// OR A, $FF
+	inst[0xF6] = Instruction{2, ora8}
+	// RST $30
+	inst[0xF7] = Instruction{4, rst30}
+	// LD HP, SP + $FF
+	inst[0xF8] = Instruction{2, ldhlsp8}
+	// LD SP, HL
+	inst[0xF9] = Instruction{4, ldsphl}
+	// LD A, ($FFFF)
+	inst[0xFA] = Instruction{3, lda16}
+	// EI
+	inst[0xFB] = Instruction{0, ei}
+	//
+	inst[0xFC] = Instruction{3, illegalop}
+	//
+	inst[0xFD] = Instruction{0, illegalop}
+	// CP A, $FF
+	inst[0xFE] = Instruction{2, cpa8}
+	// RST $38
+	inst[0xFF] = Instruction{4, rst38}
 }
 
-// Emulates machine ticks (m-ticks)
-func Tick() {
-	ticks--
+// Handles functionality related to divider and timer
+func handleTimer() {
+	// When count reaches Dividor rate
+	if count%DIV_RATE == DIV_RATE {
+		// TODO emulate CGB double speed effect
+		bus.IncDIV()
+	}
 
-	if ticks > 0 {
+	// When count reaches Timer rate, increment Timer Counter.
+	// Timer Rate depends on Timer Control's bits 0 and 1. The following
+	// shows frequency in m-ticks:
+	// 00: CPU Clock / 0x1000 = 0x400 Hz
+	// 01: CPU Clock / 0x10   = 0x10000 Hz
+	// 10: CPU Clock / 0x40   = 0x4000 Hz
+	// 11: CPU Clock / 0x100  = 0x1000 Hz
+	timeRate := CPU_FREQ()
+	switch bus.GetTacClockSelect() {
+	case 0b00:
+		timeRate /= 0x1000
+	case 0b01:
+		timeRate /= 0x10
+	case 0b10:
+		timeRate /= 0x40
+	case 0b11:
+		timeRate /= 0x100
+	}
+
+	// When Timer is Enabled and Timer Counter overflow,
+	// set Timer counter to value stored in TMA and request a Timer interrupt
+	// if count
+}
+
+// Hanndles Interrupt request
+func irq() {
+	// Checks is Master Interrupt is enabled,
+	// Ignores intterupts if disabled
+	if !reg.IME {
 		return
 	}
 
-	// execute
-	// TODO de-assemble and print
-	// Read tick numbers after
-	inst[curOP].execute()
+	// Disable further Intterupts. This is a CPU behaviour when an
+	// interrupt is to be executed. So further interrupts must be enabled
+	// by the program (Usually using RETI instruction when returning from
+	// an interrupt vector)
+	reg.IME = false
 
-	// Read next instruction
-	curOP = nextOP
+	if bus.IsVblank() && bus.IrqVblank() {
+		bus.SetIrQVblank(false)
+		push16(from16(reg.PC))
+		reg.PC = 0x40
+	} else if bus.IsLCDStat() && bus.IrqLCDStat() {
+		bus.SetIRQLCDStat(false)
+		push16(from16(reg.PC))
+		reg.PC = 0x48
+	} else if bus.IsTimerInt() && bus.IrqTimer() {
+		bus.SetIRQTimer(false)
+		push16(from16(reg.PC))
+		reg.PC = 0x50
+	} else if bus.IsSerialInt() && bus.IrqSerial() {
+		bus.SetIrqSerial(false)
+		push16(from16(reg.PC))
+		reg.PC = 0x58
+	} else if bus.IsJoypadInt() && bus.IrqJoypad() {
+		bus.SetIrqJoypad(false)
+		push16(from16(reg.PC))
+		reg.PC = 0x60
+	}
+
+}
+
+// Emulates machine ticks (m-ticks). Each m-tick is equivalent to four
+// system tick
+// Goes through a fetch-decode-execute cycle
+func Tick() {
+
+	// m-ticks needs to be finished before executing
+	// the cycle again
+	if ticks > 0 {
+		ticks--
+		count++
+		return
+	}
+
+	irq()
+
+	// Fetch instruction
+	curOP = bus.Read(reg.PC)
 	reg.PC++
-	nextOP = bus.Read(reg.PC)
+
+	// Decode
+	instruction := inst[curOP]
+
+	// Execute Operation
+	// TODO de-assemble and print executed operation
+	instruction.execute()
+
+	handleTimer()
+	ticks--
+	count++
 }
 
 //region InstFunc
@@ -615,13 +709,13 @@ func incbc() string {
 }
 
 func incb() string {
-	incmem(&reg.B)
+	increg(&reg.B)
 
 	return "INC B"
 }
 
 func decb() string {
-	decmem(&reg.B)
+	decreg(&reg.B)
 
 	return "DEC B"
 }
@@ -678,13 +772,13 @@ func decbc() string {
 }
 
 func incc() string {
-	incmem(&reg.C)
+	increg(&reg.C)
 
 	return "INC C"
 }
 
 func decc() string {
-	decmem(&reg.C)
+	decreg(&reg.C)
 
 	return "DEC C"
 }
@@ -744,13 +838,13 @@ func incde() string {
 }
 
 func incd() string {
-	incmem(&reg.D)
+	increg(&reg.D)
 
 	return "INC D"
 }
 
 func decd() string {
-	decmem(&reg.D)
+	decreg(&reg.D)
 
 	return "DEC D"
 }
@@ -805,13 +899,13 @@ func decde() string {
 }
 
 func ince() string {
-	incmem(&reg.E)
+	increg(&reg.E)
 
 	return "INC E"
 }
 
 func dece() string {
-	decmem(&reg.E)
+	decreg(&reg.E)
 
 	return "DEC E"
 }
@@ -870,13 +964,13 @@ func inchl() string {
 }
 
 func inch() string {
-	incmem(&reg.H)
+	increg(&reg.H)
 
 	return "INC H"
 }
 
 func dech() string {
-	decmem(&reg.H)
+	decreg(&reg.H)
 
 	return "DEC H"
 }
@@ -923,13 +1017,13 @@ func dechl() string {
 }
 
 func incl() string {
-	incmem(&reg.L)
+	increg(&reg.L)
 
 	return "INC L"
 }
 
 func decl() string {
-	decmem(&reg.L)
+	decreg(&reg.L)
 
 	return "DEC L"
 }
@@ -976,14 +1070,20 @@ func incsp() string {
 
 func inchlind() string {
 	pos := reg.GetHL()
-	incmem(&bus.Ram[pos])
+	value := bus.Read(pos)
+	reg.AffectFlagZH(value, value+1)
+	reg.SetFlagN(false)
+	bus.Write(pos, value+1)
 
 	return "INC (HL)"
 }
 
 func dechlind() string {
 	pos := reg.GetHL()
-	decmem(&bus.Ram[pos])
+	value := bus.Read(pos)
+	reg.AffectFlagZH(value, value+1)
+	reg.SetFlagN(true)
+	bus.Write(pos, value+1)
 
 	return "DEC H"
 }
@@ -1033,13 +1133,13 @@ func decsp() string {
 }
 
 func inca() string {
-	incmem(&reg.A)
+	increg(&reg.A)
 
 	return "INC A"
 }
 
 func deca() string {
-	decmem(&reg.A)
+	decreg(&reg.A)
 
 	return "DEC A"
 }
@@ -1473,7 +1573,7 @@ func addal() string {
 }
 
 func addahl() string {
-	adda(bus.Ram[reg.GetHL()])
+	adda(bus.Read(reg.GetHL()))
 
 	return "ADD A, (HL)"
 }
@@ -1521,7 +1621,7 @@ func adcal() string {
 }
 
 func adcahl() string {
-	adca(bus.Ram[reg.GetHL()])
+	adca(bus.Read(reg.GetHL()))
 
 	return "ADC A, (HL)"
 }
@@ -1569,7 +1669,7 @@ func subal() string {
 }
 
 func subahl() string {
-	suba(bus.Ram[reg.GetHL()])
+	suba(bus.Read(reg.GetHL()))
 
 	return "SUB A, (HL)"
 }
@@ -1617,7 +1717,7 @@ func sbcal() string {
 }
 
 func sbcahl() string {
-	sbca(bus.Ram[reg.GetHL()])
+	sbca(bus.Read(reg.GetHL()))
 
 	return "SBC A, (HL)"
 }
@@ -1665,7 +1765,7 @@ func andal() string {
 }
 
 func andahl() string {
-	anda(bus.Ram[reg.GetHL()])
+	anda(bus.Read(reg.GetHL()))
 
 	return "AND A, (HL)"
 }
@@ -1713,7 +1813,7 @@ func xoral() string {
 }
 
 func xorahl() string {
-	xora(bus.Ram[reg.GetHL()])
+	xora(bus.Read(reg.GetHL()))
 
 	return "XOR A, (HL)"
 }
@@ -1761,7 +1861,7 @@ func oral() string {
 }
 
 func orahl() string {
-	ora(bus.Ram[reg.GetHL()])
+	ora(bus.Read(reg.GetHL()))
 
 	return "OR A, (HL)"
 }
@@ -1809,7 +1909,7 @@ func cpal() string {
 }
 
 func cpahl() string {
-	cpa(bus.Ram[reg.GetHL()])
+	cpa(bus.Read(reg.GetHL()))
 
 	return "CP A, (HL)"
 }
@@ -1864,21 +1964,343 @@ func adda8() string {
 	return fmt.Sprintf("ADD A, $%X", value)
 }
 
+func rst00() string {
+	callmem(00)
+
+	return "RST $00"
+}
+
+func retz() string {
+	retcond(reg.GetFlagZ(), 3)
+
+	return "RET Z"
+}
+
+func ret() string {
+	retcond(true, 0)
+
+	return "RET"
+}
+
+func jpz() string {
+	value := jpcond(reg.GetFlagZ(), 1)
+
+	return fmt.Sprintf("JP Z, $%X", value)
+}
+
+func prefixcb() string {
+	// TODO implement
+	log.Fatal("Not implemented")
+
+	return "NOT Implemented"
+}
+
+func callz() string {
+	value := callcond(reg.GetFlagZ(), 3)
+
+	return fmt.Sprintf("CALL Z, $%X", value)
+}
+
+func call() string {
+	value := callcond(true, 0)
+
+	return fmt.Sprintf("CALL $%X", value)
+}
+
+func adca8() string {
+	value := bus.Read(reg.PC)
+	reg.PC++
+	adca(value)
+
+	return fmt.Sprintf("ADC A, $%X", value)
+}
+
+func rst08() string {
+	callmem(0x08)
+
+	return "RST $08"
+}
+
+func retnc() string {
+	retcond(!reg.GetFlagC(), 3)
+
+	return "RET NC"
+}
+
+func popde() string {
+	pop16(&reg.D, &reg.E)
+
+	return "POP DE"
+}
+
+func jpnc() string {
+	value := jpcond(!reg.GetFlagC(), 1)
+
+	return fmt.Sprintf("JP NC, $%X", value)
+}
+
+func callnc() string {
+	value := callcond(!reg.GetFlagC(), 3)
+
+	return fmt.Sprintf("CALL NC, $%X", value)
+}
+
+func pushde() string {
+	push16(reg.D, reg.E)
+
+	return "PUSH DE"
+}
+
+func suba8() string {
+	value := bus.Read(reg.PC)
+	reg.PC++
+	suba(value)
+
+	return fmt.Sprintf("SUB A, $%X", value)
+}
+
+func rst10() string {
+	callmem(0x10)
+
+	return "RST $10"
+}
+
+func retc() string {
+	retcond(reg.GetFlagC(), 3)
+
+	return "RET C"
+}
+
+func reti() string {
+	// Equivalent to executing ei() followed by ret()
+	reg.IME = true
+	retcond(true, 0)
+
+	return "RETI"
+}
+
+func jpc() string {
+	value := jpcond(reg.GetFlagC(), 1)
+
+	return fmt.Sprintf("JP C, $%X", value)
+}
+
+func callc() string {
+	value := callcond(reg.GetFlagC(), 3)
+
+	return fmt.Sprintf("CALL C, $%X", value)
+}
+
+func sbca8() string {
+	value := bus.Read(reg.PC)
+	reg.PC++
+	sbca(value)
+
+	return fmt.Sprintf("SBC A, $%X", value)
+}
+
+func rst18() string {
+	callmem(0x18)
+
+	return "RST $18"
+}
+
+func ldff8a() string {
+	var pos uint16 = 0xFF00
+	var value uint8 = bus.Read(reg.PC)
+	pos += uint16(value)
+	reg.PC++
+	ldmem(pos, reg.A)
+
+	return fmt.Sprint("LD (FF00 + $X), A", value)
+}
+
+func pophl() string {
+	pop16(&reg.H, &reg.L)
+
+	return "POP HL"
+}
+
+func ldffca() string {
+	var pos uint16 = 0xFF00
+	pos += uint16(reg.C)
+	ldmem(pos, reg.A)
+
+	return "LD (FF00 + C), A"
+}
+
+func pushhl() string {
+	push16(reg.H, reg.L)
+
+	return "PUSH HL"
+}
+
+func anda8() string {
+	value := bus.Read(reg.PC)
+	reg.PC++
+	anda(value)
+
+	return fmt.Sprintf("AND A, $%X", value)
+}
+
+func rst20() string {
+	callmem(0x20)
+
+	return "RST $20"
+}
+
+func addsp() string {
+	var value int8 = int8(bus.Read(reg.PC))
+	reg.PC++
+	reg.SP += uint16(value)
+
+	return fmt.Sprintf("ADD SP, $%X", value)
+}
+
+func jphl() string {
+	reg.PC = reg.GetHL()
+
+	return "JP HL"
+}
+
+func ld16a() string {
+	value := bus.Read16(reg.PC)
+	reg.PC += 2
+	ldmem(value, reg.A)
+
+	return fmt.Sprintf("LD ($%X), A", value)
+}
+
+func xora8() string {
+	value := bus.Read(reg.PC)
+	xora(value)
+
+	return fmt.Sprintf("XOR A, $%X", value)
+}
+
+func rst28() string {
+	callmem(0x28)
+
+	return "RST $28"
+}
+
+func ldaff8() string {
+	var pos uint16 = 0xFF00
+	var value uint8 = bus.Read(reg.PC)
+	pos += uint16(value)
+	reg.PC++
+	reg.A = bus.Read(pos)
+
+	return fmt.Sprintf("LD A, (FF00 + $%X)", value)
+}
+
+func popaf() string {
+	var pos uint16 = 0xFF00
+	pos += uint16(reg.C)
+	reg.A = bus.Read(pos)
+
+	return "LD A, (FF00 + C)"
+}
+
+func ldaffc() string {
+	var pos uint16 = 0xFF00
+	pos += uint16(reg.C)
+	reg.A = bus.Read(pos)
+
+	return "LD A, (FF00 + C)"
+}
+
+func di() string {
+	reg.IME = false
+
+	return "DI"
+}
+
+func pushaf() string {
+	push16(reg.A, reg.F)
+
+	return "PUSH AF"
+}
+
+func ora8() string {
+	value := bus.Read(reg.PC)
+	reg.PC++
+	ora(value)
+
+	return fmt.Sprintf("OR A, $%X", value)
+}
+
+func rst30() string {
+	callmem(0x30)
+
+	return "RST $30"
+}
+
+func ldhlsp8() string {
+	value := bus.Read(reg.PC)
+	reg.PC++
+	newValue := reg.SP + uint16(value)
+	reg.AffectFlagHC16(reg.GetHL(), newValue)
+	reg.SetHL(newValue)
+
+	return fmt.Sprintf("LD HL, SP + $%X", value)
+}
+
+func ldsphl() string {
+	reg.SP = reg.GetHL()
+
+	return "LD SP, HL"
+}
+
+func lda16() string {
+	value := bus.Read16(reg.PC)
+	reg.PC += 2
+	reg.A = bus.Read(value)
+
+	return fmt.Sprintf("LD A, ($%X)", value)
+}
+
+func ei() string {
+	reg.IME = true
+
+	return "EI"
+}
+
+func cpa8() string {
+	value := bus.Read(reg.PC)
+	reg.PC++
+	cpa(value)
+
+	return fmt.Sprintf("CP A, $%X", value)
+}
+
+func rst38() string {
+	callmem(0x38)
+
+	return "RST $38"
+}
+
+func illegalop() string {
+	//TODO make it optional to crash
+
+	return "ILLEGAL OP Used"
+}
+
 //endregion InstFunc
 
 // Helper functions
 
-// Increment an 8-bit memory location by one.
+// Increment a register by one.
 // Affects Flags Z and H. Sets Flag N to 0
-func incmem(r8 *uint8) {
+func increg(r8 *uint8) {
 	reg.AffectFlagZH(*r8, *r8+1)
 	reg.SetFlagN(false)
 	*r8++
 }
 
-// Decrement an 8-bit memory location by one.
+// Decrement a register by one.
 // Affects Flags Z and H. Sets Flag N to 0
-func decmem(r8 *uint8) {
+func decreg(r8 *uint8) {
 	reg.AffectFlagZH(*r8, *r8+1)
 	reg.SetFlagN(true)
 	*r8++
@@ -1909,8 +2331,9 @@ func jrcond(condition bool, addTicks uint8) uint8 {
 	reg.PC++
 
 	if condition {
-
-		reg.PC += uint16(value)
+		// Value is converted to signed 8bit first for relative
+		// positioning
+		reg.PC += uint16(int8(value))
 		ticks += uint(addTicks)
 	}
 
@@ -2057,11 +2480,21 @@ func callcond(condition bool, addTicks uint8) uint16 {
 	reg.PC += 2
 
 	if condition {
-		push16(from16(reg.PC))
-		reg.PC = value
-
+		callmem(value)
 		ticks += uint(addTicks)
 	}
 
 	return value
+}
+
+// Calls a subroutine
+// Current PC value is pushed to stack and PC is set to value
+func callmem(value uint16) {
+	push16(from16(reg.PC))
+	reg.PC = value
+}
+
+// Load value to memory location
+func ldmem(pos uint16, value uint8) {
+	bus.Write(pos, value)
 }

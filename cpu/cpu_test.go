@@ -75,11 +75,11 @@ func TestRla(t *testing.T) {
 func TestJr(t *testing.T) {
 	setup()
 
-	reg.PC = 0x0A
+	reg.PC = 0x800A
 	bus.Write(reg.PC+1, 0x04)
 	jr()
-	var expected uint8 = 0x0F
-	var actual uint8 = uint8(reg.PC)
+	var expected uint16 = 0x800F
+	var actual uint16 = reg.PC
 
 	if expected != actual {
 		t.Errorf(`Jump was not performed as expected.
@@ -87,16 +87,16 @@ func TestJr(t *testing.T) {
 		Actual = %X`, expected, actual)
 	}
 
-	reg.PC = 0x0A
+	reg.PC = 0x800A
 	bus.Write(reg.PC+1, 0xFC) //0xFC = -4
 	jr()
-	expected = 0x07
-	actual = uint8(reg.PC)
+	expected = 0x8007
+	actual = reg.PC
 
 	if expected != actual {
 		t.Errorf(`Jump was not performed as expected.
-		Expected = %X
-		Actual = %X`, expected, actual)
+		Expected = $%X
+		Actual = $%X`, expected, actual)
 	}
 
 }
@@ -127,7 +127,7 @@ func TestIncReg(t *testing.T) {
 	setup()
 
 	reg.B = 0xFF
-	incmem(&reg.B)
+	increg(&reg.B)
 	var expected uint8 = 0
 	var actual uint8 = reg.B
 
@@ -142,7 +142,7 @@ func TestDecReg(t *testing.T) {
 	setup()
 
 	reg.B = 0xFF
-	decmem(&reg.B)
+	decreg(&reg.B)
 	var expected uint8 = 0
 	var actual uint8 = reg.B
 
