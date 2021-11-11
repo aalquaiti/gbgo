@@ -127,7 +127,7 @@ func TestIncReg(t *testing.T) {
 	setup()
 
 	reg.B = 0xFF
-	increg(&reg.B)
+	incReg(&reg.B)
 	var expected uint8 = 0
 	var actual uint8 = reg.B
 
@@ -142,7 +142,7 @@ func TestDecReg(t *testing.T) {
 	setup()
 
 	reg.B = 0xFF
-	decreg(&reg.B)
+	decReg(&reg.B)
 	var expected uint8 = 0
 	var actual uint8 = reg.B
 

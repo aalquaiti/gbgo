@@ -16,7 +16,7 @@ const (
 
 type Instruction struct {
 	// TODO add comments
-	ticks   uint
+	ticks   uint8
 	execute func() string
 }
 
@@ -24,12 +24,13 @@ type Instruction struct {
 type Mode int
 
 var (
-	bus   io.Bus
-	ticks uint // m-ticks remaining for an instruction
-	count uint // m-ticks count. Helps with timer functionality
-	reg   *Register
-	curOP uint8 // Current Op to execute. Used in cpu fetch phase
-	inst  [INST_SIZE]Instruction
+	bus    io.Bus
+	ticks  uint8  // m-ticks remaining for an instruction
+	count  uint32 // m-ticks count. Helps with timer functionality
+	reg    *Register
+	curOP  uint8 // Current Op to execute. Used in cpu fetch phase
+	inst   [INST_SIZE]Instruction
+	cbInst [INST_SIZE]Instruction
 )
 
 // Variables that should be treated as immutable.
@@ -49,6 +50,8 @@ func init() {
 
 // Initialise instructions
 func initInstructions() {
+	// region Instruction Set
+
 	// NOP
 	inst[0x00] = Instruction{1, nop}
 	// LD BC, $FFFF
@@ -576,12 +579,84 @@ func initInstructions() {
 	inst[0xFE] = Instruction{2, cpa8}
 	// RST $38
 	inst[0xFF] = Instruction{4, rst38}
+
+	// endregion Instruction Set
+
+	// region CB Prefixed Instructions
+
+	// RLC B
+	inst[0x00] = Instruction{2, rlcb}
+	// RLC C
+	inst[0x01] = Instruction{2, rlcc}
+	// RLC D
+	inst[0x02] = Instruction{2, rlcd}
+	// RLC E
+	inst[0x03] = Instruction{2, rlce}
+	// RLC H
+	inst[0x04] = Instruction{2, rlch}
+	// RLC L
+	inst[0x05] = Instruction{2, rlcl}
+	// RLC (HL)
+	inst[0x06] = Instruction{2, rlchl}
+	// RLC A
+	inst[0x07] = Instruction{2, cbrlca}
+	// RRC B
+	inst[0x08] = Instruction{2, rrcb}
+	// RRC C
+	inst[0x09] = Instruction{2, rrcc}
+	// RRC D
+	inst[0x0A] = Instruction{2, rrcd}
+	// RRC E
+	inst[0x0B] = Instruction{2, rrce}
+	// RRC H
+	inst[0x0C] = Instruction{2, rrch}
+	// RRC L
+	inst[0x0D] = Instruction{2, rrcl}
+	// RRC (HL)
+	inst[0x0E] = Instruction{2, rrchl}
+	// RRC A
+	inst[0x0F] = Instruction{2, cbrrca}
+
+	// RL B
+	inst[0x10] = Instruction{2, rlb}
+	// RL C
+	inst[0x11] = Instruction{2, rlc}
+	// RL D
+	inst[0x12] = Instruction{2, rld}
+	// RL E
+	inst[0x13] = Instruction{2, rle}
+	// RL H
+	inst[0x14] = Instruction{2, rlh}
+	// RL L
+	inst[0x15] = Instruction{2, rll}
+	// RL (HL)
+	inst[0x16] = Instruction{2, rlhl}
+	// RL A
+	inst[0x17] = Instruction{2, cbrla}
+	// RR B
+	inst[0x18] = Instruction{2, rrb}
+	// RR C
+	inst[0x19] = Instruction{2, rrc}
+	// RR D
+	inst[0x1A] = Instruction{2, rrd}
+	// RR E
+	inst[0x1B] = Instruction{2, rre}
+	// RR H
+	inst[0x1C] = Instruction{2, rrh}
+	// RR L
+	inst[0x1D] = Instruction{2, rrl}
+	// RR (HL)
+	inst[0x1E] = Instruction{2, rrhl}
+	// RR A
+	inst[0x1F] = Instruction{2, cbrra}
+
+	// endregion CB Prefixed Instructions
 }
 
 // Handles functionality related to divider and timer
 func handleTimer() {
 	// When count reaches Dividor rate
-	if count%DIV_RATE == DIV_RATE {
+	if count&DIV_RATE == DIV_RATE {
 		// TODO emulate CGB double speed effect
 		bus.IncDIV()
 	}
@@ -605,9 +680,25 @@ func handleTimer() {
 		timeRate /= 0x100
 	}
 
-	// When Timer is Enabled and Timer Counter overflow,
-	// set Timer counter to value stored in TMA and request a Timer interrupt
-	// if count
+	// Time Rate is decreased by one to AND it with CPU clock count.
+	// This will shows if the time should be incremented
+	// TODO: Add an example for clarity
+	timeRate -= 1
+	var timeReached bool = count&timeRate == timeRate
+
+	if timeReached {
+		// When Timer is Enabled and Timer Counter overflow,
+		// set Timer counter to value stored in TMA and request a
+		// Timer interrupt
+		timaCount := bus.Read(io.TIMA_ADDR)
+		if bus.IsTacTimerEnabled() && timaCount == 0xFF {
+			bus.Write(io.TIMA_ADDR, bus.Read(io.TMA_ADDR))
+			bus.SetIRQTimer(true)
+		} else {
+			bus.Write(io.TIMA_ADDR, timaCount+1)
+		}
+
+	}
 }
 
 // Hanndles Interrupt request
@@ -653,6 +744,12 @@ func irq() {
 // Goes through a fetch-decode-execute cycle
 func Tick() {
 
+	// Count is important for handling time. Therefore it should not
+	// exceed cpu frequency value
+	if count == CPU_FREQ() {
+		count = 0
+	}
+
 	// m-ticks needs to be finished before executing
 	// the cycle again
 	if ticks > 0 {
@@ -661,6 +758,9 @@ func Tick() {
 		return
 	}
 
+	// TODO check if timer should be handled with each tick, instead with
+	// the current simulated bulks of ticks
+	handleTimer()
 	irq()
 
 	// Fetch instruction
@@ -672,6 +772,7 @@ func Tick() {
 
 	// Execute Operation
 	// TODO de-assemble and print executed operation
+	ticks += instruction.ticks
 	instruction.execute()
 
 	handleTimer()
@@ -679,7 +780,7 @@ func Tick() {
 	count++
 }
 
-//region InstFunc
+//region Instruction Functions
 
 func nop() string {
 	return "NOP"
@@ -709,13 +810,13 @@ func incbc() string {
 }
 
 func incb() string {
-	increg(&reg.B)
+	incReg(&reg.B)
 
 	return "INC B"
 }
 
 func decb() string {
-	decreg(&reg.B)
+	decReg(&reg.B)
 
 	return "DEC B"
 }
@@ -735,10 +836,13 @@ func rlca() string {
 	var bit7 bool = reg.A&0x80 == 0x80
 	// If bit 7 is 1
 	reg.A <<= 1
-	reg.SetFlagC(bit7)
 	if bit7 {
 		reg.A |= 1
 	}
+	reg.SetFlagZ(false)
+	reg.SetFlagN(false)
+	reg.SetFlagH(false)
+	reg.SetFlagC(bit7)
 
 	return "RLCA"
 }
@@ -752,7 +856,7 @@ func ldmemsp() string {
 }
 
 func addhlbc() string {
-	addhlreg(reg.B, reg.C)
+	addhlReg(reg.B, reg.C)
 
 	return "ADD HL, BC"
 }
@@ -772,13 +876,13 @@ func decbc() string {
 }
 
 func incc() string {
-	increg(&reg.C)
+	incReg(&reg.C)
 
 	return "INC C"
 }
 
 func decc() string {
-	decreg(&reg.C)
+	decReg(&reg.C)
 
 	return "DEC C"
 }
@@ -796,10 +900,13 @@ func ldc() string {
 func rrca() string {
 	var bit0 bool = reg.A&0x1 == 0x1
 	reg.A >>= 1
-	reg.SetFlagC(bit0)
 	if bit0 {
 		reg.A |= 0x80
 	}
+	reg.SetFlagZ(false)
+	reg.SetFlagN(false)
+	reg.SetFlagH(false)
+	reg.SetFlagC(bit0)
 
 	return "RRCA"
 }
@@ -838,13 +945,13 @@ func incde() string {
 }
 
 func incd() string {
-	increg(&reg.D)
+	incReg(&reg.D)
 
 	return "INC D"
 }
 
 func decd() string {
-	decreg(&reg.D)
+	decReg(&reg.D)
 
 	return "DEC D"
 }
@@ -856,7 +963,7 @@ func ldd() string {
 	return fmt.Sprintf("LD D, $%X", reg.D)
 }
 
-// Rotate Register A left
+// Rotate Register A left through Carry
 // Previous Carry shifts to bit 0
 // Bit 7 shift to Carry
 // C <- [7~0] <- C
@@ -867,19 +974,22 @@ func rla() string {
 	if reg.GetFlagC() {
 		reg.A |= 1
 	}
+	reg.SetFlagZ(false)
+	reg.SetFlagN(false)
+	reg.SetFlagH(false)
 	reg.SetFlagC(bit7)
 
 	return "RLA"
 }
 
 func jr() string {
-	value := jrcond(true, 0)
+	value := jrCond(true, 0)
 
 	return fmt.Sprintf("JR $%X", value)
 }
 
 func addhlde() string {
-	addhlreg(reg.D, reg.E)
+	addhlReg(reg.D, reg.E)
 
 	return "ADD HL, DE"
 }
@@ -899,13 +1009,13 @@ func decde() string {
 }
 
 func ince() string {
-	increg(&reg.E)
+	incReg(&reg.E)
 
 	return "INC E"
 }
 
 func dece() string {
-	decreg(&reg.E)
+	decReg(&reg.E)
 
 	return "DEC E"
 }
@@ -917,8 +1027,8 @@ func lde() string {
 	return fmt.Sprintf("LD E, $%X", reg.E)
 }
 
-// Rotate Register A left
-// Previous Carry s-===========hifts to bit 7
+// Rotate Register A right through Carry
+// Previous Carry value shifts to bit 7
 // Bit 0 shifts to Carry
 // C -> [7~0] -> C
 func rra() string {
@@ -928,13 +1038,16 @@ func rra() string {
 	if reg.GetFlagC() {
 		reg.A |= 0x80
 	}
+	reg.SetFlagZ(false)
+	reg.SetFlagN(false)
+	reg.SetFlagH(false)
 	reg.SetFlagC(bit0)
 
 	return "RRA"
 }
 
 func jrnz() string {
-	value := jrcond(!reg.GetFlagZ(), 1)
+	value := jrCond(!reg.GetFlagZ(), 1)
 
 	return fmt.Sprintf("JR NZ, $%X", value)
 }
@@ -964,13 +1077,13 @@ func inchl() string {
 }
 
 func inch() string {
-	increg(&reg.H)
+	incReg(&reg.H)
 
 	return "INC H"
 }
 
 func dech() string {
-	decreg(&reg.H)
+	decReg(&reg.H)
 
 	return "DEC H"
 }
@@ -990,13 +1103,13 @@ func daa() string {
 }
 
 func jrz() string {
-	value := jrcond(reg.GetFlagZ(), 1)
+	value := jrCond(reg.GetFlagZ(), 1)
 
 	return fmt.Sprintf("JR Z, $%X", value)
 }
 
 func addhlhl() string {
-	addhlreg(reg.H, reg.L)
+	addhlReg(reg.H, reg.L)
 
 	return "ADD HL, HL"
 }
@@ -1017,13 +1130,13 @@ func dechl() string {
 }
 
 func incl() string {
-	increg(&reg.L)
+	incReg(&reg.L)
 
 	return "INC L"
 }
 
 func decl() string {
-	decreg(&reg.L)
+	decReg(&reg.L)
 
 	return "DEC L"
 }
@@ -1042,7 +1155,7 @@ func cpl() string {
 }
 
 func jrnc() string {
-	value := jrcond(!reg.GetFlagC(), 1)
+	value := jrCond(!reg.GetFlagC(), 1)
 
 	return fmt.Sprintf("JR NC, $%X", value)
 }
@@ -1107,13 +1220,13 @@ func scf() string {
 }
 
 func jrc() string {
-	value := jrcond(reg.GetFlagC(), 1)
+	value := jrCond(reg.GetFlagC(), 1)
 
 	return fmt.Sprintf("JR C, $%X", value)
 }
 
 func addhlsp() string {
-	addhlreg16(reg.SP)
+	addhlReg16(reg.SP)
 
 	return "ADD HL, SP"
 }
@@ -1133,13 +1246,13 @@ func decsp() string {
 }
 
 func inca() string {
-	increg(&reg.A)
+	incReg(&reg.A)
 
 	return "INC A"
 }
 
 func deca() string {
-	decreg(&reg.A)
+	decReg(&reg.A)
 
 	return "DEC A"
 }
@@ -1921,7 +2034,7 @@ func cpaa() string {
 }
 
 func retnz() string {
-	retcond(!reg.GetFlagZ(), 3)
+	retCond(!reg.GetFlagZ(), 3)
 
 	return "RET NZ"
 }
@@ -1933,19 +2046,19 @@ func popbc() string {
 }
 
 func jpnz() string {
-	value := jpcond(!reg.GetFlagZ(), 1)
+	value := jpCond(!reg.GetFlagZ(), 1)
 
 	return fmt.Sprintf("JP, NZ, $%X", value)
 }
 
 func jp() string {
-	value := jpcond(true, 0)
+	value := jpCond(true, 0)
 
 	return fmt.Sprintf("JP $%X", value)
 }
 
 func callnz() string {
-	value := callcond(!reg.GetFlagZ(), 3)
+	value := callCond(!reg.GetFlagZ(), 3)
 
 	return fmt.Sprintf("CALL NZ, $%X", value)
 }
@@ -1971,38 +2084,44 @@ func rst00() string {
 }
 
 func retz() string {
-	retcond(reg.GetFlagZ(), 3)
+	retCond(reg.GetFlagZ(), 3)
 
 	return "RET Z"
 }
 
 func ret() string {
-	retcond(true, 0)
+	retCond(true, 0)
 
 	return "RET"
 }
 
 func jpz() string {
-	value := jpcond(reg.GetFlagZ(), 1)
+	value := jpCond(reg.GetFlagZ(), 1)
 
 	return fmt.Sprintf("JP Z, $%X", value)
 }
 
 func prefixcb() string {
-	// TODO implement
-	log.Fatal("Not implemented")
+	// Fetch instruction
+	curOP = bus.Read(reg.PC)
+	reg.PC++
 
-	return "NOT Implemented"
+	// Decode
+	instruction := cbInst[curOP]
+
+	// Execute Operation
+	ticks += instruction.ticks
+	return instruction.execute()
 }
 
 func callz() string {
-	value := callcond(reg.GetFlagZ(), 3)
+	value := callCond(reg.GetFlagZ(), 3)
 
 	return fmt.Sprintf("CALL Z, $%X", value)
 }
 
 func call() string {
-	value := callcond(true, 0)
+	value := callCond(true, 0)
 
 	return fmt.Sprintf("CALL $%X", value)
 }
@@ -2022,7 +2141,7 @@ func rst08() string {
 }
 
 func retnc() string {
-	retcond(!reg.GetFlagC(), 3)
+	retCond(!reg.GetFlagC(), 3)
 
 	return "RET NC"
 }
@@ -2034,13 +2153,13 @@ func popde() string {
 }
 
 func jpnc() string {
-	value := jpcond(!reg.GetFlagC(), 1)
+	value := jpCond(!reg.GetFlagC(), 1)
 
 	return fmt.Sprintf("JP NC, $%X", value)
 }
 
 func callnc() string {
-	value := callcond(!reg.GetFlagC(), 3)
+	value := callCond(!reg.GetFlagC(), 3)
 
 	return fmt.Sprintf("CALL NC, $%X", value)
 }
@@ -2066,7 +2185,7 @@ func rst10() string {
 }
 
 func retc() string {
-	retcond(reg.GetFlagC(), 3)
+	retCond(reg.GetFlagC(), 3)
 
 	return "RET C"
 }
@@ -2074,19 +2193,19 @@ func retc() string {
 func reti() string {
 	// Equivalent to executing ei() followed by ret()
 	reg.IME = true
-	retcond(true, 0)
+	retCond(true, 0)
 
 	return "RETI"
 }
 
 func jpc() string {
-	value := jpcond(reg.GetFlagC(), 1)
+	value := jpCond(reg.GetFlagC(), 1)
 
 	return fmt.Sprintf("JP C, $%X", value)
 }
 
 func callc() string {
-	value := callcond(reg.GetFlagC(), 3)
+	value := callCond(reg.GetFlagC(), 3)
 
 	return fmt.Sprintf("CALL C, $%X", value)
 }
@@ -2286,13 +2405,221 @@ func illegalop() string {
 	return "ILLEGAL OP Used"
 }
 
-//endregion InstFunc
+//endregion Instruction Functions
 
-// Helper functions
+//region CP Prefixed Instruction Functions
+
+func rlcb() string {
+	rlcReg(&reg.B)
+
+	return "RLC B"
+}
+
+func rlcc() string {
+	rlcReg(&reg.C)
+
+	return "RLC C"
+}
+
+func rlcd() string {
+	rlcReg(&reg.D)
+
+	return "RLC D"
+}
+
+func rlce() string {
+	rlcReg(&reg.E)
+
+	return "RLC E"
+}
+
+func rlch() string {
+	rlcReg(&reg.H)
+
+	return "RLC H"
+}
+
+func rlcl() string {
+	rlcReg(&reg.L)
+
+	return "RLC L"
+}
+
+func rlchl() string {
+	pos := reg.GetHL()
+	value := bus.Read(pos)
+	value = rlcVal(value)
+	bus.Write(pos, value)
+
+	return "RLC (HL)"
+}
+
+func cbrlca() string {
+	rlcReg(&reg.A)
+
+	return "RLC A"
+}
+
+func rrcb() string {
+	rrcReg(&reg.B)
+
+	return "RRC B"
+}
+
+func rrcc() string {
+	rrcReg(&reg.C)
+
+	return "RRC C"
+}
+
+func rrcd() string {
+	rrcReg(&reg.D)
+
+	return "RRC D"
+}
+
+func rrce() string {
+	rrcReg(&reg.E)
+
+	return "RRC E"
+}
+
+func rrch() string {
+	rrcReg(&reg.H)
+
+	return "RRC H"
+}
+
+func rrcl() string {
+	rrcReg(&reg.L)
+
+	return "RRC L"
+}
+
+func rrchl() string {
+	pos := reg.GetHL()
+	value := bus.Read(pos)
+	value = rrcVal(value)
+	bus.Write(pos, value)
+
+	return "RRC L"
+}
+
+func cbrrca() string {
+	rrcReg(&reg.A)
+
+	return "RRC A"
+}
+
+func rlb() string {
+	rlReg(&reg.B)
+
+	return "RL B"
+}
+
+func rlc() string {
+	rlReg(&reg.C)
+
+	return "RL C"
+}
+
+func rld() string {
+	rlReg(&reg.D)
+
+	return "RL D"
+}
+
+func rle() string {
+	rlReg(&reg.E)
+
+	return "RL E"
+}
+
+func rlh() string {
+	rlReg(&reg.H)
+
+	return "RL H"
+}
+
+func rll() string {
+	rlReg(&reg.L)
+
+	return "RL L"
+}
+
+func rlhl() string {
+	pos := reg.GetHL()
+	value := bus.Read(pos)
+	value = rl(value)
+	bus.Write(pos, value)
+
+	return "RL (HL)"
+}
+
+func cbrla() string {
+	rlReg(&reg.A)
+
+	return "RL A"
+}
+
+func rrb() string {
+	rrReg(&reg.B)
+
+	return "RR B"
+}
+
+func rrc() string {
+	rrReg(&reg.C)
+
+	return "RR C"
+}
+
+func rrd() string {
+	rrReg(&reg.D)
+
+	return "RR D"
+}
+
+func rre() string {
+	rrReg(&reg.E)
+
+	return "RR E"
+}
+
+func rrh() string {
+	rrReg(&reg.H)
+
+	return "RR H"
+}
+
+func rrl() string {
+	rrReg(&reg.L)
+
+	return "RR L"
+}
+
+func rrhl() string {
+	pos := reg.GetHL()
+	value := bus.Read(pos)
+	value = rr(value)
+	bus.Write(pos, value)
+
+	return "RR L"
+}
+
+func cbrra() string {
+	rrReg(&reg.A)
+
+	return "RR A"
+}
+
+//endregion CP Prefixed Instruction Functions
+
+//region Helper functions
 
 // Increment a register by one.
 // Affects Flags Z and H. Sets Flag N to 0
-func increg(r8 *uint8) {
+func incReg(r8 *uint8) {
 	reg.AffectFlagZH(*r8, *r8+1)
 	reg.SetFlagN(false)
 	*r8++
@@ -2300,7 +2627,7 @@ func increg(r8 *uint8) {
 
 // Decrement a register by one.
 // Affects Flags Z and H. Sets Flag N to 0
-func decreg(r8 *uint8) {
+func decReg(r8 *uint8) {
 	reg.AffectFlagZH(*r8, *r8+1)
 	reg.SetFlagN(true)
 	*r8++
@@ -2309,13 +2636,13 @@ func decreg(r8 *uint8) {
 // Add value to register HL
 // Value comes in most significant byte (high) and least
 // significant byte
-func addhlreg(high, low uint8) {
-	addhlreg16(to16(high, low))
+func addhlReg(high, low uint8) {
+	addhlReg16(to16(high, low))
 }
 
 // Add a 16-bit value to register HL
 // Affects Flag H and C. Set Flag N to Zero
-func addhlreg16(value uint16) {
+func addhlReg16(value uint16) {
 	curHL := reg.GetHL()
 	nextVal := curHL + value
 	reg.SetHL(nextVal)
@@ -2326,7 +2653,7 @@ func addhlreg16(value uint16) {
 // Relate Jump according to condition. Additional ticks will be added
 // if condition met
 // Returns byte read after the jump instruction
-func jrcond(condition bool, addTicks uint8) uint8 {
+func jrCond(condition bool, addTicks uint8) uint8 {
 	value := bus.Read(reg.PC + 1)
 	reg.PC++
 
@@ -2334,7 +2661,7 @@ func jrcond(condition bool, addTicks uint8) uint8 {
 		// Value is converted to signed 8bit first for relative
 		// positioning
 		reg.PC += uint16(int8(value))
-		ticks += uint(addTicks)
+		ticks += addTicks
 	}
 
 	return value
@@ -2343,13 +2670,13 @@ func jrcond(condition bool, addTicks uint8) uint8 {
 // Jumps to position according to condition. Additional ticks will be added
 // if condition met
 // Returns 16-bit read after the jump instruction
-func jpcond(condition bool, addTicks uint8) uint16 {
+func jpCond(condition bool, addTicks uint8) uint16 {
 	value := bus.Read16(reg.PC + 1)
 	reg.PC += 2
 
 	if condition {
 		reg.PC = value
-		ticks += uint(addTicks)
+		ticks += addTicks
 	}
 
 	return value
@@ -2443,12 +2770,12 @@ func cpa(value uint8) {
 }
 
 // Return from subroutine if condition met.
-func retcond(condition bool, addTicks uint8) {
+func retCond(condition bool, addTicks uint8) {
 	if !condition {
 		return
 	}
 
-	ticks += uint(addTicks)
+	ticks += addTicks
 	reg.PC = bus.Read16(reg.SP)
 	reg.SP++
 }
@@ -2475,13 +2802,13 @@ func push16(high, low uint8) {
 // Calls a subroutine according to condition. Additional ticks will be added
 // if condition met
 // Returns 16-bit read after the call instruction
-func callcond(condition bool, addTicks uint8) uint16 {
+func callCond(condition bool, addTicks uint8) uint16 {
 	value := bus.Read16(reg.PC + 1)
 	reg.PC += 2
 
 	if condition {
 		callmem(value)
-		ticks += uint(addTicks)
+		ticks += addTicks
 	}
 
 	return value
@@ -2497,4 +2824,111 @@ func callmem(value uint16) {
 // Load value to memory location
 func ldmem(pos uint16, value uint8) {
 	bus.Write(pos, value)
+}
+
+//endregion Helper Functions
+
+// Rotate a Register left
+// Bit 7 shifts to bit 0
+// Bit 7 affect the carry Flag
+// C <- [7~0] <- [7]
+func rlcReg(r8 *uint8) {
+	*r8 = rlcVal(*r8)
+}
+
+// Rotate an 8-bit value left
+// Bit 7 shifts to bit 0
+// Bit 7 affect the carry Flag
+// C <- [7~0] <- [7]
+func rlcVal(value uint8) uint8 {
+	var bit7 bool = value&0x80 == 0x80
+	// If bit 7 is 1
+	value <<= 1
+	if bit7 {
+		value |= 1
+	}
+	reg.SetFlagZ(value == 0)
+	reg.SetFlagN(false)
+	reg.SetFlagH(false)
+	reg.SetFlagC(bit7)
+
+	return value
+}
+
+// Rotate a Register right
+// Bit 0 shifts to Carry
+// [0] -> [7~0] -> C
+func rrcReg(r8 *uint8) {
+	*r8 = rrcVal(*r8)
+}
+
+// Rotate an 8-bit value right
+// Bit 0 shifts to Carry
+// [0] -> [7~0] -> C
+func rrcVal(value uint8) uint8 {
+	var bit0 bool = value&0x1 == 0x1
+	value >>= 1
+	if bit0 {
+		value |= 0x80
+	}
+	reg.SetFlagZ(false)
+	reg.SetFlagN(false)
+	reg.SetFlagH(false)
+	reg.SetFlagC(bit0)
+
+	return value
+}
+
+// Rotate a Register left through Carry
+// Previous Carry shifts to bit 0
+// Bit 7 shift to Carry
+// C <- [7~0] <- C
+func rlReg(r8 *uint8) {
+	*r8 = rl(*r8)
+}
+
+// Rotate an 8-bit value left through Carry
+// Previous Carry shifts to bit 0
+// Bit 7 shift to Carry
+// C <- [7~0] <- C
+func rl(value uint8) uint8 {
+	var bit7 bool = value&0x80 == 0x80
+	value <<= 1
+	// If carry flag is 1
+	if reg.GetFlagC() {
+		value |= 1
+	}
+	reg.SetFlagZ(value == 0)
+	reg.SetFlagN(false)
+	reg.SetFlagH(false)
+	reg.SetFlagC(bit7)
+
+	return value
+}
+
+// Rotate a Register right through Carry
+// Previous Carry value shifts to bit 7
+// Bit 0 shifts to Carry
+// C -> [7~0] -> C
+func rrReg(r8 *uint8) {
+	*r8 = rr(*r8)
+}
+
+// Rotate an 8-bit value right through Carry
+// Previous Carry value shifts to bit 7
+// Bit 0 shifts to Carry
+// C -> [7~0] -> C
+func rr(value uint8) uint8 {
+	var bit0 bool = value&0x1 == 0x1
+	value >>= 1
+	// If carry flag is 1
+	if reg.GetFlagC() {
+		value |= 0x80
+	}
+	reg.SetFlagZ(value == 0)
+	reg.SetFlagN(false)
+	reg.SetFlagH(false)
+	reg.SetFlagC(bit0)
+
+	return value
 }
