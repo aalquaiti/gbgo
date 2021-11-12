@@ -650,6 +650,237 @@ func initInstructions() {
 	// RR A
 	inst[0x1F] = Instruction{2, cbrra}
 
+	// SLA B
+	inst[0x20] = Instruction{2, slab}
+	// SLA C
+	inst[0x21] = Instruction{2, slac}
+	// SLA D
+	inst[0x22] = Instruction{2, slad}
+	// SLA E
+	inst[0x23] = Instruction{2, slae}
+	// SLA H
+	inst[0x24] = Instruction{2, slah}
+	// SLA L
+	inst[0x25] = Instruction{2, slal}
+	// SLA (HL)
+	inst[0x26] = Instruction{2, slahl}
+	// SLA A
+	inst[0x27] = Instruction{2, slaa}
+	// SRA B
+	inst[0x28] = Instruction{2, srab}
+	// SRA C
+	inst[0x29] = Instruction{2, srac}
+	// SRA D
+	inst[0x2A] = Instruction{2, srad}
+	// SRA E
+	inst[0x2B] = Instruction{2, srae}
+	// SRA H
+	inst[0x2C] = Instruction{2, srah}
+	// SRA L
+	inst[0x2D] = Instruction{2, sral}
+	// SRA (HL)
+	inst[0x2E] = Instruction{2, srahl}
+	// SRA A
+	inst[0x2F] = Instruction{2, sraa}
+
+	// SWAP B
+	inst[0x30] = Instruction{2, swapb}
+	// SWAP C
+	inst[0x31] = Instruction{2, swapc}
+	// SWAP D
+	inst[0x32] = Instruction{2, swapd}
+	// SWAP E
+	inst[0x33] = Instruction{2, swape}
+	// SWAP H
+	inst[0x34] = Instruction{2, swaph}
+	// SWAP L
+	inst[0x35] = Instruction{2, swapl}
+	// SWAP (HL)
+	inst[0x36] = Instruction{2, swaphl}
+	// SWAP A
+	inst[0x37] = Instruction{2, swapa}
+	// SRL B
+	inst[0x28] = Instruction{2, srlb}
+	// SRL C
+	inst[0x29] = Instruction{2, srlc}
+	// SRL D
+	inst[0x2A] = Instruction{2, srld}
+	// SRL E
+	inst[0x2B] = Instruction{2, srle}
+	// SRL H
+	inst[0x2C] = Instruction{2, srlh}
+	// SRL L
+	inst[0x2D] = Instruction{2, srll}
+	// SRL (HL)
+	inst[0x2E] = Instruction{2, srlhl}
+	// SRL A
+	inst[0x2F] = Instruction{2, srla}
+
+	// SWAP B
+	inst[0x30] = Instruction{2, swapb}
+	// SWAP C
+	inst[0x31] = Instruction{2, swapc}
+	// SWAP D
+	inst[0x32] = Instruction{2, swapd}
+	// SWAP E
+	inst[0x33] = Instruction{2, swape}
+	// SWAP H
+	inst[0x34] = Instruction{2, swaph}
+	// SWAP L
+	inst[0x35] = Instruction{2, swapl}
+	// SWAP (HL)
+	inst[0x36] = Instruction{2, swaphl}
+	// SWAP A
+	inst[0x37] = Instruction{2, swapa}
+	// SRL B
+	inst[0x38] = Instruction{2, srlb}
+	// SRL C
+	inst[0x39] = Instruction{2, srlc}
+	// SRL D
+	inst[0x3A] = Instruction{2, srld}
+	// SRL E
+	inst[0x3B] = Instruction{2, srle}
+	// SRL H
+	inst[0x3C] = Instruction{2, srlh}
+	// SRL L
+	inst[0x3D] = Instruction{2, srll}
+	// SRL (HL)
+	inst[0x3E] = Instruction{2, srlhl}
+	// SRL A
+	inst[0x3F] = Instruction{2, srla}
+
+	// BIT 0, B
+	inst[0x40] = Instruction{2, bit0b}
+	// BIT 0, C
+	inst[0x41] = Instruction{2, bit0c}
+	// BIT 0, D
+	inst[0x42] = Instruction{2, bit0d}
+	// BIT 0, E
+	inst[0x43] = Instruction{2, bit0e}
+	// BIT 0, H
+	inst[0x44] = Instruction{2, bit0h}
+	// BIT 0, L
+	inst[0x45] = Instruction{2, bit0l}
+	// BIT 0, (HL)
+	inst[0x46] = Instruction{2, bit0hl}
+	// BIT 0, A
+	inst[0x47] = Instruction{2, bit0a}
+	// BIT 1, B
+	inst[0x48] = Instruction{2, bit1b}
+	// BIT 1, C
+	inst[0x49] = Instruction{2, bit1c}
+	// BIT 1, D
+	inst[0x4A] = Instruction{2, bit1d}
+	// BIT 1, E
+	inst[0x4B] = Instruction{2, bit1e}
+	// BIT 1, H
+	inst[0x4C] = Instruction{2, bit1h}
+	// BIT 1, L
+	inst[0x4D] = Instruction{2, bit1l}
+	// BIT 1, (HL)
+	inst[0x4E] = Instruction{2, bit1hl}
+	// BIT 1, A
+	inst[0x4F] = Instruction{2, bit1a}
+
+	// BIT 2, B
+	inst[0x50] = Instruction{2, bit2b}
+	// BIT 2, C
+	inst[0x51] = Instruction{2, bit2c}
+	// BIT 2, D
+	inst[0x52] = Instruction{2, bit2d}
+	// BIT 2, E
+	inst[0x53] = Instruction{2, bit2e}
+	// BIT 2, H
+	inst[0x54] = Instruction{2, bit2h}
+	// BIT 2, L
+	inst[0x55] = Instruction{2, bit2l}
+	// BIT 2, (HL)
+	inst[0x56] = Instruction{2, bit2hl}
+	// BIT 2, A
+	inst[0x57] = Instruction{2, bit2a}
+	// BIT 3, B
+	inst[0x58] = Instruction{2, bit3b}
+	// BIT 3, C
+	inst[0x59] = Instruction{2, bit3c}
+	// BIT 3, D
+	inst[0x5A] = Instruction{2, bit3d}
+	// BIT 3, E
+	inst[0x5B] = Instruction{2, bit3e}
+	// BIT 3, H
+	inst[0x5C] = Instruction{2, bit3h}
+	// BIT 3, L
+	inst[0x5D] = Instruction{2, bit3l}
+	// BIT 3, (HL)
+	inst[0x5E] = Instruction{2, bit3hl}
+	// BIT 3, A
+	inst[0x5F] = Instruction{2, bit3a}
+
+	// BIT 4, B
+	inst[0x60] = Instruction{2, bit4b}
+	// BIT 4, C
+	inst[0x61] = Instruction{2, bit4c}
+	// BIT 4, D
+	inst[0x62] = Instruction{2, bit4d}
+	// BIT 4, E
+	inst[0x63] = Instruction{2, bit4e}
+	// BIT 4, H
+	inst[0x64] = Instruction{2, bit4h}
+	// BIT 4, L
+	inst[0x65] = Instruction{2, bit4l}
+	// BIT 4, (HL)
+	inst[0x66] = Instruction{2, bit4hl}
+	// BIT 4, A
+	inst[0x67] = Instruction{2, bit4a}
+	// BIT 5, B
+	inst[0x68] = Instruction{2, bit5b}
+	// BIT 5, C
+	inst[0x69] = Instruction{2, bit5c}
+	// BIT 5, D
+	inst[0x6A] = Instruction{2, bit5d}
+	// BIT 5, E
+	inst[0x6B] = Instruction{2, bit5e}
+	// BIT 5, H
+	inst[0x6C] = Instruction{2, bit5h}
+	// BIT 5, L
+	inst[0x6D] = Instruction{2, bit5l}
+	// BIT 5, (HL)
+	inst[0x6E] = Instruction{2, bit5hl}
+	// BIT 5, A
+	inst[0x6F] = Instruction{2, bit5a}
+
+	// BIT 6, B
+	inst[0x70] = Instruction{2, bit6b}
+	// BIT 6, C
+	inst[0x71] = Instruction{2, bit6c}
+	// BIT 6, D
+	inst[0x72] = Instruction{2, bit6d}
+	// BIT 6, E
+	inst[0x73] = Instruction{2, bit6e}
+	// BIT 6, H
+	inst[0x74] = Instruction{2, bit6h}
+	// BIT 6, L
+	inst[0x75] = Instruction{2, bit6l}
+	// BIT 6, (HL)
+	inst[0x76] = Instruction{2, bit6hl}
+	// BIT 6, A
+	inst[0x77] = Instruction{2, bit6a}
+	// BIT 7, B
+	inst[0x78] = Instruction{2, bit7b}
+	// BIT 7, C
+	inst[0x79] = Instruction{2, bit7c}
+	// BIT 7, D
+	inst[0x7A] = Instruction{2, bit7d}
+	// BIT 7, E
+	inst[0x7B] = Instruction{2, bit7e}
+	// BIT 7, H
+	inst[0x7C] = Instruction{2, bit7h}
+	// BIT 7, L
+	inst[0x7D] = Instruction{2, bit7l}
+	// BIT 7, (HL)
+	inst[0x7E] = Instruction{2, bit7hl}
+	// BIT 7, A
+	inst[0x7F] = Instruction{2, bit7a}
+
 	// endregion CB Prefixed Instructions
 }
 
@@ -2613,6 +2844,466 @@ func cbrra() string {
 	return "RR A"
 }
 
+func slab() string {
+	slaReg(&reg.B)
+
+	return "SLA B"
+}
+
+func slac() string {
+	slaReg(&reg.C)
+
+	return "SLA C"
+}
+
+func slad() string {
+	slaReg(&reg.D)
+
+	return "SLA D"
+}
+
+func slae() string {
+	slaReg(&reg.E)
+
+	return "SLA E"
+}
+
+func slah() string {
+	slaReg(&reg.H)
+
+	return "SLA H"
+}
+
+func slal() string {
+	slaReg(&reg.L)
+
+	return "SLA L"
+}
+
+func slahl() string {
+	pos := reg.GetHL()
+	value := bus.Read(pos)
+	value = sla(value)
+	bus.Write(pos, value)
+
+	return "SLA (HL)"
+}
+
+func slaa() string {
+	slaReg(&reg.A)
+
+	return "SLA A"
+}
+
+func srab() string {
+	sraReg(&reg.B)
+
+	return "SRA B"
+}
+
+func srac() string {
+	sraReg(&reg.C)
+
+	return "SRA C"
+}
+
+func srad() string {
+	sraReg(&reg.D)
+
+	return "SRA D"
+}
+
+func srae() string {
+	sraReg(&reg.E)
+
+	return "SRA E"
+}
+
+func srah() string {
+	sraReg(&reg.H)
+
+	return "SRA H"
+}
+
+func sral() string {
+	sraReg(&reg.L)
+
+	return "SRA L"
+}
+
+func srahl() string {
+	pos := reg.GetHL()
+	value := bus.Read(pos)
+	value = sra(value)
+	bus.Write(pos, value)
+
+	return "SRA (HL)"
+}
+
+func sraa() string {
+	sraReg(&reg.A)
+
+	return "SRA A"
+}
+
+func swapb() string {
+	swapReg(&reg.B)
+
+	return "SWAP B"
+}
+
+func swapc() string {
+	swapReg(&reg.C)
+
+	return "SWAP C"
+}
+
+func swapd() string {
+	swapReg(&reg.D)
+
+	return "SWAP D"
+}
+
+func swape() string {
+	swapReg(&reg.E)
+
+	return "SWAP E"
+}
+
+func swaph() string {
+	swapReg(&reg.H)
+
+	return "SWAP H"
+}
+
+func swapl() string {
+	swapReg(&reg.L)
+
+	return "SWAP L"
+}
+
+func swaphl() string {
+	pos := reg.GetHL()
+	value := bus.Read(pos)
+	value = swap(value)
+	bus.Write(pos, value)
+
+	return "SWAP (HL)"
+}
+
+func swapa() string {
+	swapReg(&reg.A)
+
+	return "SWAP A"
+}
+
+func srlb() string {
+	srlReg(&reg.B)
+
+	return "SRL B"
+}
+
+func srlc() string {
+	srlReg(&reg.C)
+
+	return "SRL C"
+}
+
+func srld() string {
+	srlReg(&reg.D)
+
+	return "SRL D"
+}
+
+func srle() string {
+	srlReg(&reg.E)
+
+	return "SRL E"
+}
+
+func srlh() string {
+	srlReg(&reg.H)
+
+	return "SRL H"
+}
+
+func srll() string {
+	srlReg(&reg.L)
+
+	return "SRL L"
+}
+
+func srlhl() string {
+	pos := reg.GetHL()
+	value := bus.Read(pos)
+	value = srl(value)
+	bus.Write(pos, value)
+
+	return "SRL (HL)"
+}
+
+func srla() string {
+	srlReg(&reg.A)
+
+	return "SRL A"
+}
+
+func bit0b() string {
+	return bitNumReg(0, &reg.B, "B")
+}
+
+func bit0c() string {
+	return bitNumReg(0, &reg.C, "C")
+}
+
+func bit0d() string {
+	return bitNumReg(0, &reg.D, "D")
+}
+
+func bit0e() string {
+	return bitNumReg(0, &reg.E, "E")
+}
+
+func bit0h() string {
+	return bitNumReg(0, &reg.H, "H")
+}
+
+func bit0l() string {
+	return bitNumReg(0, &reg.L, "L")
+}
+
+func bit0hl() string {
+	return bitNumHL(0)
+}
+
+func bit0a() string {
+	return bitNumReg(0, &reg.A, "A")
+}
+
+func bit1b() string {
+	return bitNumReg(1, &reg.B, "B")
+}
+
+func bit1c() string {
+	return bitNumReg(1, &reg.C, "C")
+}
+
+func bit1d() string {
+	return bitNumReg(1, &reg.D, "D")
+}
+
+func bit1e() string {
+	return bitNumReg(1, &reg.E, "E")
+}
+
+func bit1h() string {
+	return bitNumReg(1, &reg.H, "H")
+}
+
+func bit1l() string {
+	return bitNumReg(1, &reg.L, "L")
+}
+
+func bit1hl() string {
+	return bitNumHL(1)
+}
+
+func bit1a() string {
+	return bitNumReg(1, &reg.A, "A")
+}
+
+func bit2b() string {
+	return bitNumReg(2, &reg.B, "B")
+}
+
+func bit2c() string {
+	return bitNumReg(2, &reg.C, "C")
+}
+
+func bit2d() string {
+	return bitNumReg(2, &reg.D, "D")
+}
+
+func bit2e() string {
+	return bitNumReg(2, &reg.E, "E")
+}
+
+func bit2h() string {
+	return bitNumReg(2, &reg.H, "H")
+}
+
+func bit2l() string {
+	return bitNumReg(2, &reg.L, "L")
+}
+
+func bit2hl() string {
+	return bitNumHL(2)
+}
+
+func bit2a() string {
+	return bitNumReg(2, &reg.A, "A")
+}
+
+func bit3b() string {
+	return bitNumReg(3, &reg.B, "B")
+}
+
+func bit3c() string {
+	return bitNumReg(3, &reg.C, "C")
+}
+
+func bit3d() string {
+	return bitNumReg(3, &reg.D, "D")
+}
+
+func bit3e() string {
+	return bitNumReg(3, &reg.E, "E")
+}
+
+func bit3h() string {
+	return bitNumReg(3, &reg.H, "H")
+}
+
+func bit3l() string {
+	return bitNumReg(3, &reg.L, "L")
+}
+
+func bit3hl() string {
+	return bitNumHL(3)
+}
+
+func bit3a() string {
+	return bitNumReg(3, &reg.A, "A")
+}
+
+func bit4b() string {
+	return bitNumReg(4, &reg.B, "B")
+}
+
+func bit4c() string {
+	return bitNumReg(4, &reg.C, "C")
+}
+
+func bit4d() string {
+	return bitNumReg(4, &reg.D, "D")
+}
+
+func bit4e() string {
+	return bitNumReg(4, &reg.E, "E")
+}
+
+func bit4h() string {
+	return bitNumReg(4, &reg.H, "H")
+}
+
+func bit4l() string {
+	return bitNumReg(4, &reg.L, "L")
+}
+
+func bit4hl() string {
+	return bitNumHL(4)
+}
+
+func bit4a() string {
+	return bitNumReg(4, &reg.A, "A")
+}
+
+func bit5b() string {
+	return bitNumReg(5, &reg.B, "B")
+}
+
+func bit5c() string {
+	return bitNumReg(5, &reg.C, "C")
+}
+
+func bit5d() string {
+	return bitNumReg(5, &reg.D, "D")
+}
+
+func bit5e() string {
+	return bitNumReg(5, &reg.E, "E")
+}
+
+func bit5h() string {
+	return bitNumReg(5, &reg.H, "H")
+}
+
+func bit5l() string {
+	return bitNumReg(5, &reg.L, "L")
+}
+
+func bit5hl() string {
+	return bitNumHL(5)
+}
+
+func bit5a() string {
+	return bitNumReg(5, &reg.A, "A")
+}
+
+func bit6b() string {
+	return bitNumReg(6, &reg.B, "B")
+}
+
+func bit6c() string {
+	return bitNumReg(6, &reg.C, "C")
+}
+
+func bit6d() string {
+	return bitNumReg(6, &reg.D, "D")
+}
+
+func bit6e() string {
+	return bitNumReg(6, &reg.E, "E")
+}
+
+func bit6h() string {
+	return bitNumReg(6, &reg.H, "H")
+}
+
+func bit6l() string {
+	return bitNumReg(6, &reg.L, "L")
+}
+
+func bit6hl() string {
+	return bitNumHL(6)
+}
+
+func bit6a() string {
+	return bitNumReg(6, &reg.A, "A")
+}
+
+func bit7b() string {
+	return bitNumReg(7, &reg.B, "B")
+}
+
+func bit7c() string {
+	return bitNumReg(7, &reg.C, "C")
+}
+
+func bit7d() string {
+	return bitNumReg(7, &reg.D, "D")
+}
+
+func bit7e() string {
+	return bitNumReg(7, &reg.E, "E")
+}
+
+func bit7h() string {
+	return bitNumReg(7, &reg.H, "H")
+}
+
+func bit7l() string {
+	return bitNumReg(7, &reg.L, "L")
+}
+
+func bit7hl() string {
+	return bitNumHL(7)
+}
+
+func bit7a() string {
+	return bitNumReg(7, &reg.A, "A")
+}
+
 //endregion CP Prefixed Instruction Functions
 
 //region Helper functions
@@ -2828,7 +3519,7 @@ func ldmem(pos uint16, value uint8) {
 
 //endregion Helper Functions
 
-// Rotate a Register left
+// Rotate Left Circular a Register
 // Bit 7 shifts to bit 0
 // Bit 7 affect the carry Flag
 // C <- [7~0] <- [7]
@@ -2836,7 +3527,7 @@ func rlcReg(r8 *uint8) {
 	*r8 = rlcVal(*r8)
 }
 
-// Rotate an 8-bit value left
+// Rotate Left Circular an 8-bit value
 // Bit 7 shifts to bit 0
 // Bit 7 affect the carry Flag
 // C <- [7~0] <- [7]
@@ -2855,14 +3546,14 @@ func rlcVal(value uint8) uint8 {
 	return value
 }
 
-// Rotate a Register right
+// Rotate Right Circular a Register
 // Bit 0 shifts to Carry
 // [0] -> [7~0] -> C
 func rrcReg(r8 *uint8) {
 	*r8 = rrcVal(*r8)
 }
 
-// Rotate an 8-bit value right
+// Rotate Right Circular an 8-bit value
 // Bit 0 shifts to Carry
 // [0] -> [7~0] -> C
 func rrcVal(value uint8) uint8 {
@@ -2892,16 +3583,12 @@ func rlReg(r8 *uint8) {
 // Bit 7 shift to Carry
 // C <- [7~0] <- C
 func rl(value uint8) uint8 {
-	var bit7 bool = value&0x80 == 0x80
-	value <<= 1
+	oldCarry := reg.GetFlagC()
+	value = sla(value)
 	// If carry flag is 1
-	if reg.GetFlagC() {
+	if oldCarry {
 		value |= 1
 	}
-	reg.SetFlagZ(value == 0)
-	reg.SetFlagN(false)
-	reg.SetFlagH(false)
-	reg.SetFlagC(bit7)
 
 	return value
 }
@@ -2919,16 +3606,125 @@ func rrReg(r8 *uint8) {
 // Bit 0 shifts to Carry
 // C -> [7~0] -> C
 func rr(value uint8) uint8 {
-	var bit0 bool = value&0x1 == 0x1
-	value >>= 1
+	oldCarry := reg.GetFlagC()
+	value = sra(value)
 	// If carry flag is 1
-	if reg.GetFlagC() {
+	if oldCarry {
 		value |= 0x80
 	}
+
+	return value
+}
+
+// Shift Left Arithmetic a Register
+// Bit 7 shift to Carry
+// C <- [7~0]
+func slaReg(r8 *uint8) {
+	*r8 = sla(*r8)
+}
+
+// Shift Left Arithmetic an 8-bit value
+// Bit 7 shift to Carry
+// C <- [7~0]
+func sla(value uint8) uint8 {
+	var bit7 bool = value&0x80 == 0x80
+	value <<= 1
+	reg.SetFlagZ(value == 0)
+	reg.SetFlagN(false)
+	reg.SetFlagH(false)
+	reg.SetFlagC(bit7)
+
+	return value
+}
+
+// Shift Right Arithmetic a Register
+// Bit 0 shifts to Carry
+// Bit 7 value doesn't change
+//  [7]-> [7~0] -> C
+func sraReg(r8 *uint8) {
+	*r8 = sra(*r8)
+}
+
+// Shift Right Arithmetic an 8-bit value
+// Bit 0 shifts to Carry
+// Bit 7 value doesn't change
+//  [7]-> [7~0] -> C
+func sra(value uint8) uint8 {
+	var bit0 bool = value&0x1 == 0x1
+	value = value&0x80 | (value >> 1)
 	reg.SetFlagZ(value == 0)
 	reg.SetFlagN(false)
 	reg.SetFlagH(false)
 	reg.SetFlagC(bit0)
 
 	return value
+}
+
+// Swap upper four bits with lower four bits for a R	egister
+// [7654] <- [3~0] || [7~5] -> [3210]
+func swapReg(r8 *uint8) {
+	*r8 = swap(*r8)
+}
+
+// Swap upper four bits with lower four bits for an 8-bit value
+// [7654] <- [3~0] || [7~5] -> [3210]
+func swap(value uint8) uint8 {
+	return value<<4 | value>>4
+}
+
+// Shift Right Logic a Register
+// Bit 0 shifts to Carry
+// [7~0] -> C
+func srlReg(r8 *uint8) {
+	*r8 = srl(*r8)
+}
+
+// Shift Right Logic an 8-bit value
+// Bit 0 shifts to Carry
+// [7~0] -> C
+func srl(value uint8) uint8 {
+	var bit0 bool = value&0x1 == 0x1
+	value >>= 1
+	reg.SetFlagZ(value == 0)
+	reg.SetFlagN(false)
+	reg.SetFlagH(false)
+	reg.SetFlagC(bit0)
+
+	return value
+}
+
+// Checks whether bit of a Register is set
+// pos: Bit position
+// r8: Register
+// name: Register Name
+// Return string in format "BIT pos, name"
+func bitNumReg(pos uint8, r8 *uint8, name string) string {
+	bit(pos, *r8)
+
+	return fmt.Sprintf("BIT %d, %s", pos, name)
+}
+
+// Checks whether bit of a value at memory address is set
+// pos: Bit position
+// address: Memory address
+// Return string in format "BIT pos, (HL)"
+func bitNumHL(pos uint8) string {
+	addr := reg.GetHL()
+	value := bus.Read(addr)
+	bit(pos, value)
+
+	return fmt.Sprintf("BIT %d, (HL)", pos)
+}
+
+// Checks whether bit at given position of an 8-bit value is
+// set or not.
+// Set Flag Z to One if bit was not set
+// Set Flag N to Zero
+// Set Flag H to One
+func bit(pos uint8, value uint8) {
+	var mask uint8 = 0x01 << pos
+	var isSet bool = value&mask == mask
+	reg.SetFlagZ(!isSet)
+	reg.SetFlagN(false)
+	reg.SetFlagH(true)
 }

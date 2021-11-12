@@ -152,3 +152,17 @@ func TestDecReg(t *testing.T) {
 		Actual = %X`, expected, actual)
 	}
 }
+
+func TestSwap(t *testing.T) {
+	setup()
+
+	var value uint8 = 0b10100101
+	var expected uint8 = 0b01011010
+	var actual uint8 = swap(value)
+
+	if expected != actual {
+		t.Errorf(`Bit Operation was not performed as expected.
+		Expected = %X
+		Actual = %X`, expected, actual)
+	}
+}
