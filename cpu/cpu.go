@@ -881,6 +881,270 @@ func initInstructions() {
 	// BIT 7, A
 	inst[0x7F] = Instruction{2, bit7a}
 
+	// RES 0, B
+	inst[0x80] = Instruction{2, res0b}
+	// RES 0, C
+	inst[0x81] = Instruction{2, res0c}
+	// RES 0, D
+	inst[0x82] = Instruction{2, res0d}
+	// RES 0, E
+	inst[0x83] = Instruction{2, res0e}
+	// RES 0, H
+	inst[0x84] = Instruction{2, res0h}
+	// RES 0, L
+	inst[0x85] = Instruction{2, res0l}
+	// RES 0, (HL)
+	inst[0x86] = Instruction{2, res0hl}
+	// RES 0, A
+	inst[0x87] = Instruction{2, res0a}
+	// RES 1, B
+	inst[0x88] = Instruction{2, res1b}
+	// RES 1, C
+	inst[0x89] = Instruction{2, res1c}
+	// RES 1, D
+	inst[0x8A] = Instruction{2, res1d}
+	// RES 1, E
+	inst[0x8B] = Instruction{2, res1e}
+	// RES 1, H
+	inst[0x8C] = Instruction{2, res1h}
+	// RES 1, L
+	inst[0x8D] = Instruction{2, res1l}
+	// RES 1, (HL)
+	inst[0x8E] = Instruction{2, res1hl}
+	// RES 1, A
+	inst[0x8F] = Instruction{2, res1a}
+
+	// RES 2, B
+	inst[0x90] = Instruction{2, res2b}
+	// RES 2, C
+	inst[0x91] = Instruction{2, res2c}
+	// RES 2, D
+	inst[0x92] = Instruction{2, res2d}
+	// RES 2, E
+	inst[0x93] = Instruction{2, res2e}
+	// RES 2, H
+	inst[0x94] = Instruction{2, res2h}
+	// RES 2, L
+	inst[0x95] = Instruction{2, res2l}
+	// RES 2, (HL)
+	inst[0x96] = Instruction{2, res2hl}
+	// RES 2, A
+	inst[0x97] = Instruction{2, res2a}
+	// RES 3, B
+	inst[0x98] = Instruction{2, res3b}
+	// RES 3, C
+	inst[0x99] = Instruction{2, res3c}
+	// RES 3, D
+	inst[0x9A] = Instruction{2, res3d}
+	// RES 3, E
+	inst[0x9B] = Instruction{2, res3e}
+	// RES 3, H
+	inst[0x9C] = Instruction{2, res3h}
+	// RES 3, L
+	inst[0x9D] = Instruction{2, res3l}
+	// RES 3, (HL)
+	inst[0x9E] = Instruction{2, res3hl}
+	// RES 3, A
+	inst[0x9F] = Instruction{2, res3a}
+
+	// RES 4, B
+	inst[0xA0] = Instruction{2, res4b}
+	// RES 4, C
+	inst[0xA1] = Instruction{2, res4c}
+	// RES 4, D
+	inst[0xA2] = Instruction{2, res4d}
+	// RES 4, E
+	inst[0xA3] = Instruction{2, res4e}
+	// RES 4, H
+	inst[0xA4] = Instruction{2, res4h}
+	// RES 4, L
+	inst[0xA5] = Instruction{2, res4l}
+	// RES 4, (HL)
+	inst[0xA6] = Instruction{2, res4hl}
+	// RES 4, A
+	inst[0xA7] = Instruction{2, res4a}
+	// RES 5, B
+	inst[0xA8] = Instruction{2, res5b}
+	// RES 5, C
+	inst[0xA9] = Instruction{2, res5c}
+	// RES 5, D
+	inst[0xAA] = Instruction{2, res5d}
+	// RES 5, E
+	inst[0xAB] = Instruction{2, res5e}
+	// RES 5, H
+	inst[0xAC] = Instruction{2, res5h}
+	// RES 5, L
+	inst[0xAD] = Instruction{2, res5l}
+	// RES 5, (HL)
+	inst[0xAE] = Instruction{2, res5hl}
+	// RES 5, A
+	inst[0xAF] = Instruction{2, res5a}
+
+	// RES 6, B
+	inst[0xB0] = Instruction{2, res6b}
+	// RES 6, C
+	inst[0xB1] = Instruction{2, res6c}
+	// RES 6, D
+	inst[0xB2] = Instruction{2, res6d}
+	// RES 6, E
+	inst[0xB3] = Instruction{2, res6e}
+	// RES 6, H
+	inst[0xB4] = Instruction{2, res6h}
+	// RES 6, L
+	inst[0xB5] = Instruction{2, res6l}
+	// RES 6, (HL)
+	inst[0xB6] = Instruction{2, res6hl}
+	// RES 6, A
+	inst[0xB7] = Instruction{2, res6a}
+	// RES 7, B
+	inst[0xB8] = Instruction{2, res7b}
+	// RES 7, C
+	inst[0xB9] = Instruction{2, res7c}
+	// RES 7, D
+	inst[0xBA] = Instruction{2, res7d}
+	// RES 7, E
+	inst[0xBB] = Instruction{2, res7e}
+	// RES 7, H
+	inst[0xBC] = Instruction{2, res7h}
+	// RES 7, L
+	inst[0xBD] = Instruction{2, res7l}
+	// RES 7, (HL)
+	inst[0xBE] = Instruction{2, res7hl}
+	// RES 7, A
+	inst[0xBF] = Instruction{2, res7a}
+
+	// SET 0, B
+	inst[0xC0] = Instruction{2, set0b}
+	// SET 0, C
+	inst[0xC1] = Instruction{2, set0c}
+	// SET 0, D
+	inst[0xC2] = Instruction{2, set0d}
+	// SET 0, E
+	inst[0xC3] = Instruction{2, set0e}
+	// SET 0, H
+	inst[0xC4] = Instruction{2, set0h}
+	// SET 0, L
+	inst[0xC5] = Instruction{2, set0l}
+	// SET 0, (HL)
+	inst[0xC6] = Instruction{2, set0hl}
+	// SET 0, A
+	inst[0xC7] = Instruction{2, set0a}
+	// SET 1, B
+	inst[0xC8] = Instruction{2, set1b}
+	// SET 1, C
+	inst[0xC9] = Instruction{2, set1c}
+	// SET 1, D
+	inst[0xCA] = Instruction{2, set1d}
+	// SET 1, E
+	inst[0xCB] = Instruction{2, set1e}
+	// SET 1, H
+	inst[0xCC] = Instruction{2, set1h}
+	// SET 1, L
+	inst[0xCD] = Instruction{2, set1l}
+	// SET 1, (HL)
+	inst[0xCE] = Instruction{2, set1hl}
+	// SET 1, A
+	inst[0xCF] = Instruction{2, set1a}
+
+	// SET 2, B
+	inst[0xD0] = Instruction{2, set2b}
+	// SET 2, C
+	inst[0xD1] = Instruction{2, set2c}
+	// SET 2, D
+	inst[0xD2] = Instruction{2, set2d}
+	// SET 2, E
+	inst[0xD3] = Instruction{2, set2e}
+	// SET 2, H
+	inst[0xD4] = Instruction{2, set2h}
+	// SET 2, L
+	inst[0xD5] = Instruction{2, set2l}
+	// SET 2, (HL)
+	inst[0xD6] = Instruction{2, set2hl}
+	// SET 2, A
+	inst[0xD7] = Instruction{2, set2a}
+	// SET 3, B
+	inst[0xD8] = Instruction{2, set3b}
+	// SET 3, C
+	inst[0xD9] = Instruction{2, set3c}
+	// SET 3, D
+	inst[0xDA] = Instruction{2, set3d}
+	// SET 3, E
+	inst[0xDB] = Instruction{2, set3e}
+	// SET 3, H
+	inst[0xDC] = Instruction{2, set3h}
+	// SET 3, L
+	inst[0xDD] = Instruction{2, set3l}
+	// SET 3, (HL)
+	inst[0xDE] = Instruction{2, set3hl}
+	// SET 3, A
+	inst[0xDF] = Instruction{2, set3a}
+
+	// SET 4, B
+	inst[0xE0] = Instruction{2, set5b}
+	// SET 4, C
+	inst[0xE1] = Instruction{2, set5c}
+	// SET 4, D
+	inst[0xE2] = Instruction{2, set5d}
+	// SET 4, E
+	inst[0xE3] = Instruction{2, set5e}
+	// SET 4, H
+	inst[0xE4] = Instruction{2, set5h}
+	// SET 4, L
+	inst[0xE5] = Instruction{2, set5l}
+	// SET 4, (HL)
+	inst[0xE6] = Instruction{2, set5hl}
+	// SET 4, A
+	inst[0xE7] = Instruction{2, set5a}
+	// SET 5, B
+	inst[0xE8] = Instruction{2, set5b}
+	// SET 5, C
+	inst[0xE9] = Instruction{2, set5c}
+	// SET 5, D
+	inst[0xEA] = Instruction{2, set5d}
+	// SET 5, E
+	inst[0xEB] = Instruction{2, set5e}
+	// SET 5, H
+	inst[0xEC] = Instruction{2, set5h}
+	// SET 5, L
+	inst[0xED] = Instruction{2, set5l}
+	// SET 5, (HL)
+	inst[0xEE] = Instruction{2, set5hl}
+	// SET 5, A
+	inst[0xEF] = Instruction{2, set5a}
+
+	// SET 6, B
+	inst[0xB0] = Instruction{2, set6b}
+	// SET 6, C
+	inst[0xB1] = Instruction{2, set6c}
+	// SET 6, D
+	inst[0xB2] = Instruction{2, set6d}
+	// SET 6, E
+	inst[0xB3] = Instruction{2, set6e}
+	// SET 6, H
+	inst[0xB4] = Instruction{2, set6h}
+	// SET 6, L
+	inst[0xB5] = Instruction{2, set6l}
+	// SET 6, (HL)
+	inst[0xB6] = Instruction{2, set6hl}
+	// SET 6, A
+	inst[0xB7] = Instruction{2, set6a}
+	// SET 7, B
+	inst[0xB8] = Instruction{2, set7b}
+	// SET 7, C
+	inst[0xB9] = Instruction{2, set7c}
+	// SET 7, D
+	inst[0xBA] = Instruction{2, set7d}
+	// SET 7, E
+	inst[0xBB] = Instruction{2, set7e}
+	// SET 7, H
+	inst[0xBC] = Instruction{2, set7h}
+	// SET 7, L
+	inst[0xBD] = Instruction{2, set7l}
+	// SET 7, (HL)
+	inst[0xBE] = Instruction{2, set7hl}
+	// SET 7, A
+	inst[0xBF] = Instruction{2, set7a}
+
 	// endregion CB Prefixed Instructions
 }
 
@@ -3304,6 +3568,518 @@ func bit7a() string {
 	return bitNumReg(7, &reg.A, "A")
 }
 
+func res0b() string {
+	return resNumReg(0, &reg.B, "B")
+}
+
+func res0c() string {
+	return resNumReg(0, &reg.C, "C")
+}
+
+func res0d() string {
+	return resNumReg(0, &reg.D, "D")
+}
+
+func res0e() string {
+	return resNumReg(0, &reg.E, "E")
+}
+
+func res0h() string {
+	return resNumReg(0, &reg.H, "H")
+}
+
+func res0l() string {
+	return resNumReg(0, &reg.L, "L")
+}
+
+func res0hl() string {
+	return resNumHL(0)
+}
+
+func res0a() string {
+	return resNumReg(0, &reg.A, "A")
+}
+
+func res1b() string {
+	return resNumReg(1, &reg.B, "B")
+}
+
+func res1c() string {
+	return resNumReg(1, &reg.C, "C")
+}
+
+func res1d() string {
+	return resNumReg(1, &reg.D, "D")
+}
+
+func res1e() string {
+	return resNumReg(1, &reg.E, "E")
+}
+
+func res1h() string {
+	return resNumReg(1, &reg.H, "H")
+}
+
+func res1l() string {
+	return resNumReg(1, &reg.L, "L")
+}
+
+func res1hl() string {
+	return resNumHL(1)
+}
+
+func res1a() string {
+	return resNumReg(1, &reg.A, "A")
+}
+
+func res2b() string {
+	return resNumReg(2, &reg.B, "B")
+}
+
+func res2c() string {
+	return resNumReg(2, &reg.C, "C")
+}
+
+func res2d() string {
+	return resNumReg(2, &reg.D, "D")
+}
+
+func res2e() string {
+	return resNumReg(2, &reg.E, "E")
+}
+
+func res2h() string {
+	return resNumReg(2, &reg.H, "H")
+}
+
+func res2l() string {
+	return resNumReg(2, &reg.L, "L")
+}
+
+func res2hl() string {
+	return resNumHL(2)
+}
+
+func res2a() string {
+	return resNumReg(2, &reg.A, "A")
+}
+
+func res3b() string {
+	return resNumReg(3, &reg.B, "B")
+}
+
+func res3c() string {
+	return resNumReg(3, &reg.C, "C")
+}
+
+func res3d() string {
+	return resNumReg(3, &reg.D, "D")
+}
+
+func res3e() string {
+	return resNumReg(3, &reg.E, "E")
+}
+
+func res3h() string {
+	return resNumReg(3, &reg.H, "H")
+}
+
+func res3l() string {
+	return resNumReg(3, &reg.L, "L")
+}
+
+func res3hl() string {
+	return resNumHL(3)
+}
+
+func res3a() string {
+	return resNumReg(3, &reg.A, "A")
+}
+
+func res4b() string {
+	return resNumReg(4, &reg.B, "B")
+}
+
+func res4c() string {
+	return resNumReg(4, &reg.C, "C")
+}
+
+func res4d() string {
+	return resNumReg(4, &reg.D, "D")
+}
+
+func res4e() string {
+	return resNumReg(4, &reg.E, "E")
+}
+
+func res4h() string {
+	return resNumReg(4, &reg.H, "H")
+}
+
+func res4l() string {
+	return resNumReg(4, &reg.L, "L")
+}
+
+func res4hl() string {
+	return resNumHL(4)
+}
+
+func res4a() string {
+	return resNumReg(4, &reg.A, "A")
+}
+
+func res5b() string {
+	return resNumReg(5, &reg.B, "B")
+}
+
+func res5c() string {
+	return resNumReg(5, &reg.C, "C")
+}
+
+func res5d() string {
+	return resNumReg(5, &reg.D, "D")
+}
+
+func res5e() string {
+	return resNumReg(5, &reg.E, "E")
+}
+
+func res5h() string {
+	return resNumReg(5, &reg.H, "H")
+}
+
+func res5l() string {
+	return resNumReg(5, &reg.L, "L")
+}
+
+func res5hl() string {
+	return resNumHL(5)
+}
+
+func res5a() string {
+	return resNumReg(5, &reg.A, "A")
+}
+
+func res6b() string {
+	return resNumReg(6, &reg.B, "B")
+}
+
+func res6c() string {
+	return resNumReg(6, &reg.C, "C")
+}
+
+func res6d() string {
+	return resNumReg(6, &reg.D, "D")
+}
+
+func res6e() string {
+	return resNumReg(6, &reg.E, "E")
+}
+
+func res6h() string {
+	return resNumReg(6, &reg.H, "H")
+}
+
+func res6l() string {
+	return resNumReg(6, &reg.L, "L")
+}
+
+func res6hl() string {
+	return resNumHL(6)
+}
+
+func res6a() string {
+	return resNumReg(6, &reg.A, "A")
+}
+
+func res7b() string {
+	return resNumReg(7, &reg.B, "B")
+}
+
+func res7c() string {
+	return resNumReg(7, &reg.C, "C")
+}
+
+func res7d() string {
+	return resNumReg(7, &reg.D, "D")
+}
+
+func res7e() string {
+	return resNumReg(7, &reg.E, "E")
+}
+
+func res7h() string {
+	return resNumReg(7, &reg.H, "H")
+}
+
+func res7l() string {
+	return resNumReg(7, &reg.L, "L")
+}
+
+func res7hl() string {
+	return resNumHL(7)
+}
+
+func res7a() string {
+	return resNumReg(7, &reg.A, "A")
+}
+
+func set0b() string {
+	return setNumReg(0, &reg.B, "B")
+}
+
+func set0c() string {
+	return setNumReg(0, &reg.C, "C")
+}
+
+func set0d() string {
+	return setNumReg(0, &reg.D, "D")
+}
+
+func set0e() string {
+	return setNumReg(0, &reg.E, "E")
+}
+
+func set0h() string {
+	return setNumReg(0, &reg.H, "H")
+}
+
+func set0l() string {
+	return setNumReg(0, &reg.L, "L")
+}
+
+func set0hl() string {
+	return setNumHL(0)
+}
+
+func set0a() string {
+	return setNumReg(0, &reg.A, "A")
+}
+
+func set1b() string {
+	return setNumReg(1, &reg.B, "B")
+}
+
+func set1c() string {
+	return setNumReg(1, &reg.C, "C")
+}
+
+func set1d() string {
+	return setNumReg(1, &reg.D, "D")
+}
+
+func set1e() string {
+	return setNumReg(1, &reg.E, "E")
+}
+
+func set1h() string {
+	return setNumReg(1, &reg.H, "H")
+}
+
+func set1l() string {
+	return setNumReg(1, &reg.L, "L")
+}
+
+func set1hl() string {
+	return setNumHL(1)
+}
+
+func set1a() string {
+	return setNumReg(1, &reg.A, "A")
+}
+
+func set2b() string {
+	return setNumReg(2, &reg.B, "B")
+}
+
+func set2c() string {
+	return setNumReg(2, &reg.C, "C")
+}
+
+func set2d() string {
+	return setNumReg(2, &reg.D, "D")
+}
+
+func set2e() string {
+	return setNumReg(2, &reg.E, "E")
+}
+
+func set2h() string {
+	return setNumReg(2, &reg.H, "H")
+}
+
+func set2l() string {
+	return setNumReg(2, &reg.L, "L")
+}
+
+func set2hl() string {
+	return setNumHL(2)
+}
+
+func set2a() string {
+	return setNumReg(2, &reg.A, "A")
+}
+
+func set3b() string {
+	return setNumReg(3, &reg.B, "B")
+}
+
+func set3c() string {
+	return setNumReg(3, &reg.C, "C")
+}
+
+func set3d() string {
+	return setNumReg(3, &reg.D, "D")
+}
+
+func set3e() string {
+	return setNumReg(3, &reg.E, "E")
+}
+
+func set3h() string {
+	return setNumReg(3, &reg.H, "H")
+}
+
+func set3l() string {
+	return setNumReg(3, &reg.L, "L")
+}
+
+func set3hl() string {
+	return setNumHL(3)
+}
+
+func set3a() string {
+	return setNumReg(3, &reg.A, "A")
+}
+
+func set4b() string {
+	return setNumReg(4, &reg.B, "B")
+}
+
+func set4c() string {
+	return setNumReg(4, &reg.C, "C")
+}
+
+func set4d() string {
+	return setNumReg(4, &reg.D, "D")
+}
+
+func set4e() string {
+	return setNumReg(4, &reg.E, "E")
+}
+
+func set4h() string {
+	return setNumReg(4, &reg.H, "H")
+}
+
+func set4l() string {
+	return setNumReg(4, &reg.L, "L")
+}
+
+func set4hl() string {
+	return setNumHL(4)
+}
+
+func set4a() string {
+	return setNumReg(4, &reg.A, "A")
+}
+
+func set5b() string {
+	return setNumReg(5, &reg.B, "B")
+}
+
+func set5c() string {
+	return setNumReg(5, &reg.C, "C")
+}
+
+func set5d() string {
+	return setNumReg(5, &reg.D, "D")
+}
+
+func set5e() string {
+	return setNumReg(5, &reg.E, "E")
+}
+
+func set5h() string {
+	return setNumReg(5, &reg.H, "H")
+}
+
+func set5l() string {
+	return setNumReg(5, &reg.L, "L")
+}
+
+func set5hl() string {
+	return setNumHL(5)
+}
+
+func set5a() string {
+	return setNumReg(5, &reg.A, "A")
+}
+
+func set6b() string {
+	return setNumReg(6, &reg.B, "B")
+}
+
+func set6c() string {
+	return setNumReg(6, &reg.C, "C")
+}
+
+func set6d() string {
+	return setNumReg(6, &reg.D, "D")
+}
+
+func set6e() string {
+	return setNumReg(6, &reg.E, "E")
+}
+
+func set6h() string {
+	return setNumReg(6, &reg.H, "H")
+}
+
+func set6l() string {
+	return setNumReg(6, &reg.L, "L")
+}
+
+func set6hl() string {
+	return setNumHL(6)
+}
+
+func set6a() string {
+	return setNumReg(6, &reg.A, "A")
+}
+
+func set7b() string {
+	return setNumReg(7, &reg.B, "B")
+}
+
+func set7c() string {
+	return setNumReg(7, &reg.C, "C")
+}
+
+func set7d() string {
+	return setNumReg(7, &reg.D, "D")
+}
+
+func set7e() string {
+	return setNumReg(7, &reg.E, "E")
+}
+
+func set7h() string {
+	return setNumReg(7, &reg.H, "H")
+}
+
+func set7l() string {
+	return setNumReg(7, &reg.L, "L")
+}
+
+func set7hl() string {
+	return setNumHL(7)
+}
+
+func set7a() string {
+	return setNumReg(7, &reg.A, "A")
+}
+
 //endregion CP Prefixed Instruction Functions
 
 //region Helper functions
@@ -3517,8 +4293,6 @@ func ldmem(pos uint16, value uint8) {
 	bus.Write(pos, value)
 }
 
-//endregion Helper Functions
-
 // Rotate Left Circular a Register
 // Bit 7 shifts to bit 0
 // Bit 7 affect the carry Flag
@@ -3706,7 +4480,6 @@ func bitNumReg(pos uint8, r8 *uint8, name string) string {
 
 // Checks whether bit of a value at memory address is set
 // pos: Bit position
-// address: Memory address
 // Return string in format "BIT pos, (HL)"
 func bitNumHL(pos uint8) string {
 	addr := reg.GetHL()
@@ -3728,3 +4501,66 @@ func bit(pos uint8, value uint8) {
 	reg.SetFlagN(false)
 	reg.SetFlagH(true)
 }
+
+// Set a bit to zero at given position of a register
+// pos: Bit position
+// r8: Register
+// name: Register Name
+// Return string in format "RES pos, name"
+func resNumReg(pos uint8, r8 *uint8, name string) string {
+	*r8 = res(pos, *r8)
+
+	return fmt.Sprintf("RES %d, %s", pos, name)
+}
+
+// Set a bit to zero at given position of a value at memory address
+// pos: Bit position
+// Return string in format "RES pos, (HL)"
+func resNumHL(pos uint8) string {
+	addr := reg.GetHL()
+	value := bus.Read(addr)
+	value = res(pos, value)
+	bus.Write(addr, value)
+
+	return fmt.Sprintf("RES %d, (HL)", pos)
+}
+
+// Set a bit to zero at given position of an 8-bit value
+func res(pos uint8, value uint8) uint8 {
+	var mask uint8 = 0x01 << pos
+	mask = ^mask
+
+	return value & mask
+}
+
+// Set a bit to one at given position of a register
+// pos: Bit position
+// r8: Register
+// name: Register Name
+// Return string in format "RES pos, name"
+func setNumReg(pos uint8, r8 *uint8, name string) string {
+	*r8 = set(pos, *r8)
+
+	return fmt.Sprintf("RES %d, %s", pos, name)
+}
+
+// Set a bit to one at given position of a value at memory address
+// pos: Bit position
+// Return string in format "RES pos, (HL)"
+func setNumHL(pos uint8) string {
+	addr := reg.GetHL()
+	value := bus.Read(addr)
+	value = set(pos, value)
+	bus.Write(addr, value)
+
+	return fmt.Sprintf("RES %d, (HL)", pos)
+}
+
+// Set a bit to zero at given position of an 8-bit value
+func set(pos uint8, value uint8) uint8 {
+	var mask uint8 = 0x01 << pos
+
+	return value | mask
+}
+
+//endregion Helper Functions
