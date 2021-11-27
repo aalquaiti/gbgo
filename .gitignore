@@ -17,3 +17,9 @@
 .DS_Store
 bin/
 .vscode/
+
+# Ignore rom binaires used for local devl
+/roms
+
+# Log files
+*.log

@@ -5,22 +5,22 @@ import (
 )
 
 func setup() {
-	reg = &Register{}
+	Reg = NewRegister()
 }
 
 func TestRlca(t *testing.T) {
 	setup()
 
-	reg.A = 0b11000011
+	*Reg.A.Val() = 0b11000011
 	rlca()
 
-	if !reg.GetFlagC() {
+	if !Reg.F.GetFlagC() {
 		t.Error(`Arithmetic was not performed as expected. 
 		Expected Flag C = 1`)
 	}
 
 	var expected uint8 = 0b10000111
-	var actual uint8 = reg.A
+	var actual uint8 = Reg.A.Get()
 
 	if expected != actual {
 		t.Errorf(`Arithmetic was not performed as expected.
@@ -32,16 +32,16 @@ func TestRlca(t *testing.T) {
 func TestRrca(t *testing.T) {
 	setup()
 
-	reg.A = 0b11000011
+	*Reg.A.Val() = 0b11000011
 	rrca()
 
-	if !reg.GetFlagC() {
+	if !Reg.F.GetFlagC() {
 		t.Error(`Arithmetic was not performed as expected. 
 		\nExpected Flag C = 1`)
 	}
 
 	var expected uint8 = 0b11100001
-	var actual uint8 = reg.A
+	var actual uint8 = Reg.A.Get()
 
 	if expected != actual {
 		t.Errorf(`Arithmetic was not performed as expected.
@@ -53,17 +53,17 @@ func TestRrca(t *testing.T) {
 func TestRla(t *testing.T) {
 	setup()
 
-	reg.A = 0b11000011
+	*Reg.A.Val() = 0b11000011
 
 	rla()
 
-	if !reg.GetFlagC() {
+	if !Reg.F.GetFlagC() {
 		t.Error(`Arithmetic was not performed as expected. 
 		Expected Flag C = 1`)
 	}
 
 	var expected uint8 = 0b10000110
-	var actual uint8 = reg.A
+	var actual uint8 = Reg.A.Get()
 
 	if expected != actual {
 		t.Errorf(`Arithmetic was not performed as expected.
@@ -75,11 +75,11 @@ func TestRla(t *testing.T) {
 func TestJr(t *testing.T) {
 	setup()
 
-	reg.PC = 0x800A
-	bus.Write(reg.PC+1, 0x04)
+	Reg.PC.Set(0xC000)
+	bus.Write(Reg.PC.Get(), 0x04)
 	jr()
-	var expected uint16 = 0x800F
-	var actual uint16 = reg.PC
+	var expected uint16 = 0xC005
+	var actual uint16 = Reg.PC.Get()
 
 	if expected != actual {
 		t.Errorf(`Jump was not performed as expected.
@@ -87,11 +87,11 @@ func TestJr(t *testing.T) {
 		Actual = %X`, expected, actual)
 	}
 
-	reg.PC = 0x800A
-	bus.Write(reg.PC+1, 0xFC) //0xFC = -4
+	Reg.PC.Set(0xC00A)
+	bus.Write(Reg.PC.Get(), 0xFC) //0xFC = -4
 	jr()
-	expected = 0x8007
-	actual = reg.PC
+	expected = 0xC007
+	actual = Reg.PC.Get()
 
 	if expected != actual {
 		t.Errorf(`Jump was not performed as expected.
@@ -104,17 +104,17 @@ func TestJr(t *testing.T) {
 func TestRra(t *testing.T) {
 	setup()
 
-	reg.A = 0b11000011
+	*Reg.A.Val() = 0b11000011
 
 	rra()
 
-	if !reg.GetFlagC() {
+	if !Reg.F.GetFlagC() {
 		t.Error(`Arithmetic was not performed as expected. 
 		Expected Flag C = 1`)
 	}
 
 	var expected uint8 = 0b01100001
-	var actual uint8 = reg.A
+	var actual uint8 = Reg.A.Get()
 
 	if expected != actual {
 		t.Errorf(`Arithmetic was not performed as expected.
@@ -126,10 +126,10 @@ func TestRra(t *testing.T) {
 func TestIncReg(t *testing.T) {
 	setup()
 
-	reg.B = 0xFF
-	incReg(&reg.B)
+	*Reg.B.Val() = 0xFF
+	incReg(Reg.B.Val())
 	var expected uint8 = 0
-	var actual uint8 = reg.B
+	var actual uint8 = Reg.B.Get()
 
 	if expected != actual {
 		t.Errorf(`Arithmetic was not performed as expected.
@@ -141,10 +141,10 @@ func TestIncReg(t *testing.T) {
 func TestDecReg(t *testing.T) {
 	setup()
 
-	reg.B = 0xFF
-	decReg(&reg.B)
+	*Reg.B.Val() = 0xFF
+	decReg(Reg.B.Val())
 	var expected uint8 = 0
-	var actual uint8 = reg.B
+	var actual uint8 = Reg.B.Get()
 
 	if expected != actual {
 		t.Errorf(`Arithmetic was not performed as expected.

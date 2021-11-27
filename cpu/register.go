@@ -1,75 +1,270 @@
 package cpu
 
+import (
+	"github.com/aalquaiti/gbgo/util"
+	"github.com/golang/glog"
+)
+
+// Registers represents all registers in a CPU
+// type Registers struct {
+// 	// TODO Add comments
+// 	A, F, B, C, D, E, H, L uint8
+// 	SP, PC                 uint16
+// 	// Interrupt Master Enable Flag
+// 	IME bool
+// }
+
+// Reg8 represents an 8-bit Register
+type Reg8 interface {
+	Val() *uint8 // Pointer to the variable holding the value
+	Get() uint8
+	Set(uint8) Reg8
+	Inc() Reg8
+	Dec() Reg8
+	String() string
+}
+
+// Reg16 represents a 16-bit Register
+type Reg16 interface {
+	Get() uint16
+	Set(uint16) Reg16
+	Inc() Reg16
+	Dec() Reg16
+	String() string
+}
+
+// Register represents all registers in a CPU
 type Register struct {
-	// TODO Add comments
-	A, F, B, C, D, E, H, L uint8
-	SP, PC                 uint16
+	A, B, C, D, E, H, L Reg8
+	F                   RegF
+	AF, BC, DE, HL      Reg16
+	SP, PC              Reg16
 	// Interrupt Master Enable Flag
 	IME bool
 }
 
-// Functions related to Flag Register (F)
+func NewRegister() Register {
+	reg := Register{E: &reg8Impl{}}
+
+	// 8-bit Registers
+	reg.A = &reg8Impl{name: "A"}
+	reg.B = &reg8Impl{name: "B"}
+	reg.C = &reg8Impl{name: "C"}
+	reg.D = &reg8Impl{name: "D"}
+	reg.E = &reg8Impl{name: "E"}
+	reg.H = &reg8Impl{name: "H"}
+	reg.L = &reg8Impl{name: "L"}
+
+	// Register F has different functionality as only the four upper bits
+	// are used
+	reg.F = RegF{}
+
+	// 16-bit Registers consisting of two 8-bits
+	reg.AF = &reg16From8Impl{high: reg.A, low: &reg.F, name: "AF"}
+	reg.BC = &reg16From8Impl{high: reg.B, low: reg.C, name: "BC"}
+	reg.DE = &reg16From8Impl{high: reg.D, low: reg.E, name: "DE"}
+	reg.HL = &reg16From8Impl{high: reg.H, low: reg.L, name: "HL"}
+
+	// 16-bit Registers
+	reg.SP = &reg16Impl{name: "SP"}
+	reg.PC = &reg16Impl{name: "PC"}
+
+	return reg
+}
+
+// reg8Impl implements Reg8 interface that represents an 8-bit register
+type reg8Impl struct {
+	value uint8
+	name  string
+}
+
+func (r *reg8Impl) Val() *uint8 {
+
+	return &r.value
+}
+
+func (r *reg8Impl) Get() uint8 {
+	return r.value
+}
+
+func (r *reg8Impl) Set(value uint8) Reg8 {
+	r.value = value
+
+	return r
+}
+
+func (r *reg8Impl) Inc() Reg8 {
+	r.value++
+
+	return r
+}
+
+func (r *reg8Impl) Dec() Reg8 {
+	r.value--
+
+	return r
+}
+
+func (r *reg8Impl) String() string {
+	return r.name
+}
+
+// reg16From8Impl implements Reg16 interface that represents a 16-bit register
+type reg16Impl struct {
+	value uint16
+	name  string
+}
+
+func (r *reg16Impl) Get() uint16 {
+	return r.value
+}
+
+func (r *reg16Impl) Set(value uint16) Reg16 {
+	r.value = value
+
+	return r
+}
+
+func (r *reg16Impl) Inc() Reg16 {
+	r.value++
+
+	return r
+}
+
+func (r *reg16Impl) Dec() Reg16 {
+	r.value--
+
+	return r
+}
+
+func (r *reg16Impl) String() string {
+	return r.name
+}
+
+// reg16From8Impl implements Reg16 interface that represents two 8-bit register
+type reg16From8Impl struct {
+	high Reg8
+	low  Reg8
+	name string
+}
+
+func (r *reg16From8Impl) Get() uint16 {
+	return util.To16(r.high.Get(), r.low.Get())
+}
+
+func (r *reg16From8Impl) Set(value uint16) Reg16 {
+	high, low := util.From16(value)
+	r.high.Set(high)
+	r.low.Set(low)
+
+	return r
+}
+
+func (r *reg16From8Impl) Inc() Reg16 {
+	r.Set(r.Get() + 1)
+
+	return r
+}
+
+func (r *reg16From8Impl) Dec() Reg16 {
+	r.Set(r.Get() - 1)
+
+	return r
+}
+
+func (r *reg16From8Impl) String() string {
+	return r.name
+}
+
+// RegF represents Flag Register
+type RegF struct {
+	value uint8
+}
+
+func (r *RegF) Val() *uint8 {
+	return &r.value
+}
 
 // Returns F Flag value, with first four bits always set to Zero
-func (r *Register) GetF() uint8 {
-	return r.F & 0b11110000
+func (r *RegF) Get() uint8 {
+	return r.value & 0b11110000
 }
 
-// Sets F Flag value, with first four bits aways set to Zero
-func (r *Register) SetF(value uint8) {
-	r.F = value & 0b11110000
+// Set Flag value, with first four bits aways set to Zero
+func (r *RegF) Set(value uint8) Reg8 {
+	r.value = value & 0b11110000
+
+	return r
 }
 
-func (r *Register) GetFlagZ() bool {
-	return (r.F & 0b10000000) == 0b10000000
+func (r *RegF) Inc() Reg8 {
+	// Should not be used. Implemented to match Reg8 interface
+	glog.Fatal("Inc() for RegF should not be used")
+
+	return r
 }
 
-func (r *Register) SetFlagZ(value bool) {
+func (r *RegF) Dec() Reg8 {
+	// Should not be used. Implemented to match Reg8 interface
+	glog.Fatal("Dec() for RegF should not be used")
+
+	return r
+}
+
+func (r *RegF) String() string {
+	return "F"
+}
+
+func (r *RegF) GetFlagZ() bool {
+	return (r.value & 0b10000000) == 0b10000000
+}
+
+func (r *RegF) SetFlagZ(value bool) {
 	if value {
-		r.F |= 0b10000000
+		r.value |= 0b10000000
 	} else {
-		r.F &= 0b01110000
+		r.value &= 0b01110000
 	}
 }
 
-func (r *Register) GetFlagN() bool {
-	return (r.F & 0b01000000) == 0b01000000
+func (r *RegF) GetFlagN() bool {
+	return (r.value & 0b01000000) == 0b01000000
 }
 
-func (r *Register) SetFlagN(value bool) {
+func (r *RegF) SetFlagN(value bool) {
 	if value {
-		r.F |= 0b01000000
+		r.value |= 0b01000000
 	} else {
-		r.F &= 0b10110000
+		r.value &= 0b10110000
 	}
 }
 
-func (r *Register) GetFlagH() bool {
-	return (r.F & 0b00100000) == 0b00100000
+func (r *RegF) GetFlagH() bool {
+	return (r.value & 0b00100000) == 0b00100000
 }
 
-func (r *Register) SetFlagH(value bool) {
+func (r *RegF) SetFlagH(value bool) {
 	if value {
-		r.F |= 0b00100000
+		r.value |= 0b00100000
 	} else {
-		r.F &= 0b11010000
+		r.value &= 0b11010000
 	}
 }
 
-func (r *Register) GetFlagC() bool {
-	return (r.F & 0b00010000) == 0b00010000
+func (r *RegF) GetFlagC() bool {
+	return (r.value & 0b00010000) == 0b00010000
 }
 
-func (r *Register) SetFlagC(value bool) {
+func (r *RegF) SetFlagC(value bool) {
 	if value {
-		r.F |= 0b00010000
+		r.value |= 0b00010000
 	} else {
-		r.F &= 0b11100000
+		r.value &= 0b11100000
 	}
 }
 
 // Affects Flags Z and H according to current and new value
-func (r *Register) AffectFlagZH(curVal, newVal uint8) {
+func (r *RegF) AffectFlagZH(curVal, newVal uint8) {
 	r.SetFlagZ(newVal == 0)
 	// when bit 3 overflow
 	halfCarry := (curVal&0b1111 == 0b1111) && (newVal&0b1111 == 0)
@@ -77,7 +272,7 @@ func (r *Register) AffectFlagZH(curVal, newVal uint8) {
 }
 
 // Affects Flags H and C according to current and new value
-func (r *Register) AffectFlagHC(curVal, newVal uint8) {
+func (r *RegF) AffectFlagHC(curVal, newVal uint8) {
 	halfCarry := (curVal&0b1111 == 0b1111) && (newVal&0b1111 == 0)
 	r.SetFlagH(halfCarry)
 	carry := (curVal&0b11110000 == 0b11110000) && (newVal&0b11110000 == 0)
@@ -86,60 +281,16 @@ func (r *Register) AffectFlagHC(curVal, newVal uint8) {
 
 // Affects Flags H and C according to 16 bit current and new value
 // H is affected by overflow in bit 11, C is affected by overflow in bit 15
-func (r *Register) AffectFlagHC16(curVal, newVal uint16) {
+func (r *RegF) AffectFlagHC16(curVal, newVal uint16) {
 	r.AffectFlagHC(uint8(curVal>>8), uint8(newVal>>8))
 }
 
 // Affects Flags Z, H and C according to current and new value
-func (r *Register) AffectFlagZHC(curVal, newVal uint8) {
+func (r *RegF) AffectFlagZHC(curVal, newVal uint8) {
 	r.SetFlagZ(newVal == 0)
 	// when bit 3 overflow
 	halfCarry := (curVal&0b1111 == 0b1111) && (newVal&0b1111 == 0)
 	r.SetFlagH(halfCarry)
 	carry := (curVal&0b11110000 == 0b11110000) && (newVal&0b11110000 == 0)
 	r.SetFlagC(carry)
-}
-
-func (r *Register) GetBC() uint16 {
-	return to16(r.B, r.C)
-}
-
-func (r *Register) SetBC(value uint16) {
-	ldmem16(&r.B, &r.C, value)
-}
-
-func (r *Register) GetDE() uint16 {
-	return to16(r.D, r.E)
-}
-
-func (r *Register) SetDE(value uint16) {
-	ldmem16(&r.D, &r.E, value)
-}
-
-func (r *Register) GetHL() uint16 {
-	return to16(r.H, r.L)
-}
-
-func (r *Register) SetHL(value uint16) {
-	ldmem16(&r.H, &r.L, value)
-}
-
-// Helper functions
-
-// Combine two 8-bit values to one 16-bit value
-func to16(rHigh, rLow uint8) uint16 {
-	return uint16(rHigh)<<8 + uint16(rLow)
-}
-
-// Convert 16-bit value to an 8-bit tuple.
-// The first return byte is the least significant byte (low)
-// the second return byte is the most significant byte (high)
-func from16(value uint16) (uint8, uint8) {
-	return uint8(value), uint8(value >> 8)
-}
-
-// Load 16-bit value to a two 8-bit memory location.
-func ldmem16(rHigh, rLow *uint8, value uint16) {
-	*rLow = uint8(value)
-	*rHigh = uint8(value >> 8)
 }

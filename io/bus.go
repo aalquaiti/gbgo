@@ -1,8 +1,14 @@
 package io
 
 import (
-	"github.com/golang/glog"
+	log "github.com/sirupsen/logrus"
 )
+
+// Device represents an IO Device
+type Device interface {
+	Read(uint16) uint8
+	Write(uint16, uint8)
+}
 
 const (
 	VRAM_SIZE = 0x2000
@@ -17,12 +23,18 @@ const (
 )
 
 type Bus struct {
+	Rom  Device
 	VRam [VRAM_SIZE]uint8 // Video RAM
 	WRam [WRAM_SIZE]uint8 // Work RAM
 	Oam  [OAM_SIZE]uint8  // Object Attribute Memory
 	IO   [IO_SIZE]uint8   // IO Registers
 	HRam [HRAM_SIZE]uint8 // High RAM
 	IE   uint8            // Interrupt Enable Register
+}
+
+// Creates New Bus
+func NewBus(rom Device) Bus {
+	return Bus{Rom: rom}
 }
 
 // Returns an 8-bit value from associated device connected to bus
@@ -40,9 +52,7 @@ func (b *Bus) Read(address uint16) uint8 {
 	switch {
 	// ROM
 	case address <= 0x7FFF:
-		// TODO Implement
-		// TODO add bank switch functionality
-		return 0
+		return b.Rom.Read(address)
 	// VRAM
 	case address <= 0x9FFF:
 		return b.VRam[address&0x7FFF]
@@ -66,7 +76,9 @@ func (b *Bus) Read(address uint16) uint8 {
 	case address <= 0xFEFF:
 		// Do nothing
 		// TODO add behaviour related to OAM access
-		glog.Warningf("Unusable address accessed at $%x", address)
+		log.WithFields(log.Fields{
+			"Address": address,
+		}).Warn("Reading from unusable memory")
 		return 0
 	// IO
 	case address <= 0xFF7F:
@@ -84,7 +96,7 @@ func (b *Bus) Read(address uint16) uint8 {
 // The first return byte is the least significant byte (low)
 // the second return byte is the most significant byte (high)
 func (b *Bus) Read16As8(address uint16) (uint8, uint8) {
-	return b.Read(address), b.Read(address)
+	return b.Read(address), b.Read(address + 1)
 }
 
 // Returns an 16-bit value from associated device connected to bus
@@ -109,8 +121,7 @@ func (b *Bus) Write(address uint16, value uint8) {
 	switch {
 	// ROM
 	case address <= 0x7FFF:
-		// TODO Implement
-		// TODO add bank switch functionality
+		b.Rom.Write(address, value)
 	// VRAM
 	case address <= 0x9FFF:
 		b.VRam[address&0x7FFF] = value
@@ -133,8 +144,10 @@ func (b *Bus) Write(address uint16, value uint8) {
 	case address <= 0xFEFF:
 		// Do nothing
 		// TODO add behaviour related to OAM access
-		glog.Warningf("Value: $%X tried to write to unusable address: $%x",
-			value, address)
+		log.WithFields(log.Fields{
+			"Address": address,
+			"Value":   value,
+		}).Warn("Writing to unusable memory")
 	// IO
 	case address <= 0xFF7F:
 		address &= 0x7F
