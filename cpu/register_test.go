@@ -3,10 +3,10 @@ package cpu
 import "testing"
 
 func TestRegFSet(t *testing.T) {
-	Reg.F.Set(0b10111001)
+	flags.Set(0b10111001)
 
 	var expected uint8 = 0b10110000
-	var actual uint8 = Reg.F.Get()
+	var actual uint8 = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Register F is not functioning as expected."+
@@ -18,10 +18,10 @@ func TestRegFSet(t *testing.T) {
 func TestRegFGet(t *testing.T) {
 	// Regisger F is not supposed to be set directly, to ensure bit 0-3
 	// are always set to Zero
-	Reg.F.value = 0b10111001
+	flags.value = 0b10111001
 
 	var expected uint8 = 0b10110000
-	var actual uint8 = Reg.F.Get()
+	var actual uint8 = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Register F is not functioning as expected."+
@@ -30,10 +30,10 @@ func TestRegFGet(t *testing.T) {
 }
 
 func TestRegFGetFlagZ(t *testing.T) {
-	Reg.F.value = 0b11111111
+	flags.value = 0b11111111
 
 	var expected bool = true
-	var actual bool = Reg.F.GetFlagZ()
+	var actual bool = flags.GetFlagZ()
 
 	if expected != actual {
 		t.Errorf("Flag Z is not functioning as expected."+
@@ -42,20 +42,20 @@ func TestRegFGetFlagZ(t *testing.T) {
 }
 
 func TestRegFSetFlagZ(t *testing.T) {
-	Reg.F.Set(0xFF)
-	Reg.F.SetFlagZ(false)
+	flags.Set(0xFF)
+	flags.SetFlagZ(false)
 	var expected uint8 = 0b01110000
-	var actual uint8 = Reg.F.Get()
+	var actual uint8 = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Flag Z not is functioning as expected.\nExpected = 0x%X"+
 			"\nActual = 0x%X", expected, actual)
 	}
 
-	Reg.F.Set(0x0)
-	Reg.F.SetFlagZ(true)
+	flags.Set(0x0)
+	flags.SetFlagZ(true)
 	expected = 0b10000000
-	actual = Reg.F.Get()
+	actual = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Flag Z not is functioning as expected.\nExpected = 0x%X"+
@@ -64,10 +64,10 @@ func TestRegFSetFlagZ(t *testing.T) {
 }
 
 func TestRegFGetFlagN(t *testing.T) {
-	Reg.F.value = 0b11111111
+	flags.value = 0b11111111
 
 	var expected bool = true
-	var actual bool = Reg.F.GetFlagN()
+	var actual bool = flags.GetFlagN()
 
 	if expected != actual {
 		t.Errorf("Flag N is not functioning as expected.\nExpected = %t"+
@@ -76,20 +76,20 @@ func TestRegFGetFlagN(t *testing.T) {
 }
 
 func TestRegFSetFlagN(t *testing.T) {
-	Reg.F.Set(0xFF)
-	Reg.F.SetFlagN(false)
+	flags.Set(0xFF)
+	flags.SetFlagN(false)
 	var expected uint8 = 0b10110000
-	var actual uint8 = Reg.F.Get()
+	var actual uint8 = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Flag N is not functioning as expected.\nExpected = 0x%X"+
 			"\nActual = 0x%X", expected, actual)
 	}
 
-	Reg.F.Set(0x0)
-	Reg.F.SetFlagN(true)
+	flags.Set(0x0)
+	flags.SetFlagN(true)
 	expected = 0b01000000
-	actual = Reg.F.Get()
+	actual = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Flag N not is functioning as expected.\nExpected = 0x%X"+
@@ -98,10 +98,10 @@ func TestRegFSetFlagN(t *testing.T) {
 }
 
 func TestRegFGetFlagH(t *testing.T) {
-	Reg.F.value = 0b11111111
+	flags.value = 0b11111111
 
 	var expected bool = true
-	var actual bool = Reg.F.GetFlagN()
+	var actual bool = flags.GetFlagN()
 
 	if expected != actual {
 		t.Errorf("Flag H is not functioning as expected.\nExpected = %t"+
@@ -110,20 +110,20 @@ func TestRegFGetFlagH(t *testing.T) {
 }
 
 func TestRegFSetFlagH(t *testing.T) {
-	Reg.F.Set(0xFF)
-	Reg.F.SetFlagH(false)
+	flags.Set(0xFF)
+	flags.SetFlagH(false)
 	var expected uint8 = 0b11010000
-	var actual uint8 = Reg.F.Get()
+	var actual uint8 = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Flag H is not functioning as expected.\nExpected = 0x%X"+
 			"\nActual = 0x%X", expected, actual)
 	}
 
-	Reg.F.Set(0x0)
-	Reg.F.SetFlagH(true)
+	flags.Set(0x0)
+	flags.SetFlagH(true)
 	expected = 0b00100000
-	actual = Reg.F.Get()
+	actual = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Flag H not is functioning as expected.\nExpected = 0x%X"+
@@ -132,10 +132,10 @@ func TestRegFSetFlagH(t *testing.T) {
 }
 
 func TestRegFGetFlagC(t *testing.T) {
-	Reg.F.value = 0b11111111
+	flags.value = 0b11111111
 
 	var expected bool = true
-	var actual bool = Reg.F.GetFlagN()
+	var actual bool = flags.GetFlagN()
 
 	if expected != actual {
 		t.Errorf("Flag C is not functioning as expected.\nExpected = %t"+
@@ -144,20 +144,20 @@ func TestRegFGetFlagC(t *testing.T) {
 }
 
 func TestRegFSetFlagC(t *testing.T) {
-	Reg.F.Set(0xFF)
-	Reg.F.SetFlagC(false)
+	flags.Set(0xFF)
+	flags.SetFlagC(false)
 	var expected uint8 = 0b11100000
-	var actual uint8 = Reg.F.Get()
+	var actual uint8 = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Flag C is not functioning as expected.\nExpected = 0x%X"+
 			"\nActual = 0x%X", expected, actual)
 	}
 
-	Reg.F.Set(0x0)
-	Reg.F.SetFlagC(true)
+	flags.Set(0x0)
+	flags.SetFlagC(true)
 	expected = 0b00010000
-	actual = Reg.F.Get()
+	actual = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Flag C not is functioning as expected.\nExpected = 0x%X"+
@@ -169,10 +169,10 @@ func TestRegFAffectZH(t *testing.T) {
 	var value uint8 = 0
 	// Test Half carry without value becoming zero
 	value = 0xF // i.e. 0b00001111
-	Reg.F.Set(0x0)
-	Reg.F.AffectFlagZH(value, value+1)
+	flags.Set(0x0)
+	flags.AffectFlagZH(value, value+1)
 	var expected uint8 = 0b00100000
-	var actual uint8 = Reg.F.Get()
+	var actual uint8 = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Affecting Flags Z and H not functioning as expected"+
@@ -181,10 +181,10 @@ func TestRegFAffectZH(t *testing.T) {
 
 	// Test Half carry with value becoming zero
 	value = 0xFF // i.e 0b11111111
-	Reg.F.Set(0x0)
-	Reg.F.AffectFlagZH(value, value+1)
+	flags.Set(0x0)
+	flags.AffectFlagZH(value, value+1)
 	expected = 0b10100000
-	actual = Reg.F.Get()
+	actual = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Affecting Flags Z and H not functioning as expected"+
@@ -196,10 +196,10 @@ func TestRegFAffectHC(t *testing.T) {
 	var value uint8 = 0
 	// Test Half carry (Flag H) without Full carry (Flag C)
 	value = 0xF // i.e. 0b00001111
-	Reg.F.Set(0x0)
-	Reg.F.AffectFlagHC(value, value+1)
+	flags.Set(0x0)
+	flags.AffectFlagHC(value, value+1)
 	var expected uint8 = 0b00100000
-	var actual uint8 = Reg.F.Get()
+	var actual uint8 = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Affecting Flags H and C not functioning as expected"+
@@ -208,10 +208,10 @@ func TestRegFAffectHC(t *testing.T) {
 
 	// Test Full caryy (Flag C) without half carry (Flag H)
 	value = 0xF0 // i.e. 0b11110000
-	Reg.F.Set(0x0)
-	Reg.F.AffectFlagHC(value, value+0x10) // i.e value + 0b00010000
+	flags.Set(0x0)
+	flags.AffectFlagHC(value, value+0x10) // i.e value + 0b00010000
 	expected = 0b00010000
-	actual = Reg.F.Get()
+	actual = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Affecting Flags Z and H not functioning as expected"+
@@ -220,10 +220,10 @@ func TestRegFAffectHC(t *testing.T) {
 
 	// Test Half carry and Fully carry being set to true
 	value = 0xFF // i.e 0b11111111
-	Reg.F.Set(0x0)
-	Reg.F.AffectFlagHC(value, value+1)
+	flags.Set(0x0)
+	flags.AffectFlagHC(value, value+1)
 	expected = 0b00110000
-	actual = Reg.F.Get()
+	actual = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Affecting Flags Z and H not functioning as expected"+
@@ -237,10 +237,10 @@ func TestRegFAffectHC16(t *testing.T) {
 	var value uint16 = 0
 	// Test Half carry (Flag H) without Full carry (Flag C)
 	value = 0xF00
-	Reg.F.Set(0x0)
-	Reg.F.AffectFlagHC16(value, value+0x100)
+	flags.Set(0x0)
+	flags.AffectFlagHC16(value, value+0x100)
 	var expected uint8 = 0b00100000
-	var actual uint8 = Reg.F.Get()
+	var actual uint8 = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Affecting Flags H and C not functioning as expected"+
@@ -249,10 +249,10 @@ func TestRegFAffectHC16(t *testing.T) {
 
 	// Test Full caryy (Flag C) without half carry (Flag H)
 	value = 0xF000
-	Reg.F.Set(0x0)
-	Reg.F.AffectFlagHC16(value, value+0x1000) // i.e value + 0b00010000
+	flags.Set(0x0)
+	flags.AffectFlagHC16(value, value+0x1000) // i.e value + 0b00010000
 	expected = 0b00010000
-	actual = Reg.F.Get()
+	actual = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Affecting Flags Z and H not functioning as expected"+
@@ -261,17 +261,17 @@ func TestRegFAffectHC16(t *testing.T) {
 
 	// Test Half carry and Fully carry being set to true
 	value = 0xFF00
-	Reg.F.Set(0x0)
-	Reg.F.AffectFlagHC16(value, value+0x100)
+	flags.Set(0x0)
+	flags.AffectFlagHC16(value, value+0x100)
 	expected = 0b00110000
-	actual = Reg.F.Get()
+	actual = flags.Get()
 
 	if expected != actual {
 		t.Errorf("Affecting Flags Z and H not functioning as expected"+
 			"\nExpected = 0x%X\nActual = 0x%X", expected, actual)
 	}
 
-	// Test Half carry and Full carry being set to False
+	// TODO Test Half carry and Full carry being set to False
 }
 
 func TestRegFGetBC(t *testing.T) {

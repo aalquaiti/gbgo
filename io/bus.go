@@ -1,6 +1,7 @@
 package io
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,7 +64,7 @@ func (b *Bus) Read(address uint16) uint8 {
 	// WRAM
 	case address <= 0xDFFF:
 		// TODO add CGB mode with switchable bank (1 to 7)
-		return b.WRam[0x1FFF]
+		return b.WRam[address&0x1FFF]
 	// WRAM Echo
 	case address <= 0xFDFF:
 		// address is AND with 0x1DFF as the echo does not mirror
@@ -82,9 +83,11 @@ func (b *Bus) Read(address uint16) uint8 {
 		return 0
 	// IO
 	case address <= 0xFF7F:
+		fmt.Printf("Reading from IO [%.4X]=%.4X ", address, b.IO[address&0x7F])
 		return b.IO[address&0x7F]
 	// HRAM
 	case address <= 0xFFFE:
+		fmt.Printf("Reading from HRAM [%.4X]=%.4X ", address, b.HRam[address&0x7F])
 		return b.HRam[address&0x7F]
 	// IE
 	default:
@@ -128,10 +131,11 @@ func (b *Bus) Write(address uint16, value uint8) {
 	// External RAM
 	case address <= 0xBFFF:
 		// TODO Implement
+		log.Fatal("Writing to External Ram Not Implemented")
 	// WRAM
 	case address <= 0xDFFF:
 		// TODO add CGB mode with switchable bank (1 to 7)
-		b.WRam[0x1FFF] = value
+		b.WRam[address&0x1FFF] = value
 	// WRAM Echo
 	case address <= 0xFDFF:
 		// address is AND with 0x1DFF as the echo does not mirror
@@ -150,17 +154,20 @@ func (b *Bus) Write(address uint16, value uint8) {
 		}).Warn("Writing to unusable memory")
 	// IO
 	case address <= 0xFF7F:
+
 		address &= 0x7F
 
 		// When Divider Register is accessed, it is reset
 		if address == 0x04 {
 			b.IO[address] = 0
 		} else {
+			fmt.Printf("Writing to IO [$FF%.2X]=%.4X ", address, value)
 			b.IO[address] = value
 		}
 
 	// HRAM
 	case address <= 0xFFFE:
+		fmt.Printf("Writing to HRAM [%.4X]=%.4X ", address, value)
 		b.HRam[address&0x7F] = value
 	// IE
 	default:
@@ -175,6 +182,22 @@ func (b *Bus) Write16(address uint16, value uint16) {
 }
 
 // HelperFunctions
+
+// ReadIE returns the value of Interrupt Enable Register at address 0xFFFF
+func (b *Bus) ReadIE() uint8 {
+	return b.IE
+}
+
+// ReadIF returns the value of Interrupt Flag at address OxFF0F
+func (b *Bus) ReadIF() uint8 {
+	return b.IO[0x0F]
+}
+
+// InterruptPending checks if an interrupt is pending, by ANDing the value of Interrupt Enable Register (IE) with the
+// value of Interrupt Flag (IF)
+func (b *Bus) InterruptPending() bool {
+	return (b.IE & b.IO[0x0F]) != 0
+}
 
 // Checks if VBlank Interrupt is Enabled
 func (b *Bus) IsVblank() bool {

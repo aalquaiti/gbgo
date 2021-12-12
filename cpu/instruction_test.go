@@ -6,6 +6,7 @@ import (
 
 func setup() {
 	Reg = NewRegister()
+	flags, _ = Reg.F.(*RegF)
 }
 
 func TestRlca(t *testing.T) {
@@ -14,7 +15,7 @@ func TestRlca(t *testing.T) {
 	*Reg.A.Val() = 0b11000011
 	rlca()
 
-	if !Reg.F.GetFlagC() {
+	if !flags.GetFlagC() {
 		t.Error(`Arithmetic was not performed as expected. 
 		Expected Flag C = 1`)
 	}
@@ -35,7 +36,7 @@ func TestRrca(t *testing.T) {
 	*Reg.A.Val() = 0b11000011
 	rrca()
 
-	if !Reg.F.GetFlagC() {
+	if !flags.GetFlagC() {
 		t.Error(`Arithmetic was not performed as expected. 
 		\nExpected Flag C = 1`)
 	}
@@ -57,7 +58,7 @@ func TestRla(t *testing.T) {
 
 	rla()
 
-	if !Reg.F.GetFlagC() {
+	if !flags.GetFlagC() {
 		t.Error(`Arithmetic was not performed as expected. 
 		Expected Flag C = 1`)
 	}
@@ -108,7 +109,7 @@ func TestRra(t *testing.T) {
 
 	rra()
 
-	if !Reg.F.GetFlagC() {
+	if !flags.GetFlagC() {
 		t.Error(`Arithmetic was not performed as expected. 
 		Expected Flag C = 1`)
 	}
@@ -143,7 +144,7 @@ func TestDecReg(t *testing.T) {
 
 	*Reg.B.Val() = 0xFF
 	decReg(Reg.B.Val())
-	var expected uint8 = 0
+	var expected uint8 = 0xFE
 	var actual uint8 = Reg.B.Get()
 
 	if expected != actual {

@@ -2,8 +2,6 @@ package cpu
 
 import (
 	"fmt"
-	"log"
-
 	"github.com/aalquaiti/gbgo/util"
 )
 
@@ -1124,7 +1122,9 @@ func ldbc16() string {
 	Reg.PC.Inc().Inc()
 	Reg.BC.Set(value)
 
-	return fmt.Sprintf("LD BC, %X", value)
+	fmt.Println()
+
+	return fmt.Sprintf("LD BC, $%.4X", value)
 }
 
 func ldbca() string {
@@ -1172,10 +1172,10 @@ func rlca() string {
 	if bit7 {
 		*Reg.A.Val() |= 1
 	}
-	Reg.F.SetFlagZ(false)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(bit7)
+	flags.SetFlagZ(false)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(bit7)
 
 	return "RLCA"
 }
@@ -1221,8 +1221,8 @@ func decc() string {
 }
 
 func ldc() string {
-	Reg.PC.Inc()
 	*Reg.C.Val() = bus.Read(Reg.PC.Get())
+	Reg.PC.Inc()
 
 	return fmt.Sprintf("LD C, $%X", Reg.C.Get())
 }
@@ -1236,10 +1236,10 @@ func rrca() string {
 	if bit0 {
 		*Reg.A.Val() |= 0x80
 	}
-	Reg.F.SetFlagZ(false)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(bit0)
+	flags.SetFlagZ(false)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(bit0)
 
 	return "RRCA"
 }
@@ -1249,6 +1249,7 @@ func rrca() string {
 func stop() string {
 	// TODO implement cpu speed switch
 
+	// After the stop functions comes an operand that is ignored by the cpu
 	Reg.PC.Inc()
 
 	return "STOP"
@@ -1304,13 +1305,13 @@ func rla() string {
 	var bit7 bool = Reg.A.Get()&0x80 == 0x80
 	*Reg.A.Val() <<= 1
 	// If carry flag is 1
-	if Reg.F.GetFlagC() {
+	if flags.GetFlagC() {
 		*Reg.A.Val() |= 1
 	}
-	Reg.F.SetFlagZ(false)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(bit7)
+	flags.SetFlagZ(false)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(bit7)
 
 	return "RLA"
 }
@@ -1368,19 +1369,19 @@ func rra() string {
 	var bit0 bool = Reg.A.Get()&0x1 == 0x1
 	*Reg.A.Val() >>= 1
 	// If carry flag is 1
-	if Reg.F.GetFlagC() {
+	if flags.GetFlagC() {
 		*Reg.A.Val() |= 0x80
 	}
-	Reg.F.SetFlagZ(false)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(bit0)
+	flags.SetFlagZ(false)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(bit0)
 
 	return "RRA"
 }
 
 func jrnz() string {
-	value := jrCond(!Reg.F.GetFlagZ(), 1)
+	value := jrCond(!flags.GetFlagZ(), 1)
 
 	return fmt.Sprintf("JR NZ, $%X", value)
 }
@@ -1429,14 +1430,48 @@ func ldh() string {
 }
 
 func daa() string {
-	// TODO implement
-	log.Fatal("Not implemented Yet")
+	// Decimal Adjust the Accumulator to be BCD correct.
+	// The process is as follows:
+	// 1. Check four Least Significant Bits (LSB)
+	// 2. LSB > 9 ||H Flag is Set to One -> Add $06 (or Subtract if N Flag is Set to One)
+	// 3. Check four Most Significant Bits (MSB)
+	// 4. MSB > 9 || C Flag is Set to One -> Add $60
 
-	return "Not Implemented"
+	// TODO test implementation is correct
+	// Use following links as guide
+	// http://z80-heaven.wikidot.com/instructions-set:daa
+	// http://www.z80.info/z80syntx.htm#DAA
+	// https://ehaskins.com/2018-01-30%20Z80%20DAA/
+	lsb := Reg.A.Get() & 0x0F
+	msb := Reg.A.Get() >> 4
+
+	// TODO Optimise code for better performance
+	if lsb > 9 || flags.GetFlagH() {
+		if !flags.GetFlagN() {
+			*Reg.A.Val() += 0x06
+		} else {
+			*Reg.A.Val() -= 0x06
+		}
+	}
+
+	if msb > 9 || flags.GetFlagC() {
+		if !flags.GetFlagN() {
+			*Reg.A.Val() += 0x60
+		} else {
+
+		}
+
+	}
+
+	flags.SetFlagZ(Reg.A.Get() == 0)
+	// Carry is set to one When BCD value is over $99, according to definition of DAA
+	flags.SetFlagC(Reg.A.Get() > 0x99)
+
+	return "DAA"
 }
 
 func jrz() string {
-	value := jrCond(Reg.F.GetFlagZ(), 1)
+	value := jrCond(flags.GetFlagZ(), 1)
 
 	return fmt.Sprintf("JR Z, $%X", value)
 }
@@ -1488,7 +1523,7 @@ func cpl() string {
 }
 
 func jrnc() string {
-	value := jrCond(!Reg.F.GetFlagC(), 1)
+	value := jrCond(!flags.GetFlagC(), 1)
 
 	return fmt.Sprintf("JR NC, $%X", value)
 }
@@ -1517,8 +1552,8 @@ func incsp() string {
 func inchlind() string {
 	pos := Reg.HL.Get()
 	value := bus.Read(pos)
-	Reg.F.AffectFlagZH(value, value+1)
-	Reg.F.SetFlagN(false)
+	flags.AffectFlagZH(value, value+1)
+	flags.SetFlagN(false)
 	bus.Write(pos, value+1)
 
 	return "INC (HL)"
@@ -1527,8 +1562,8 @@ func inchlind() string {
 func dechlind() string {
 	pos := Reg.HL.Get()
 	value := bus.Read(pos)
-	Reg.F.AffectFlagZH(value, value+1)
-	Reg.F.SetFlagN(true)
+	flags.AffectFlagZH(value, value+1)
+	flags.SetFlagN(true)
 	bus.Write(pos, value+1)
 
 	return "DEC H"
@@ -1545,15 +1580,15 @@ func ldhl8() string {
 // Set Carry Flag
 // Flags N and H are set to Zero
 func scf() string {
-	Reg.F.SetFlagC(true)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
+	flags.SetFlagC(true)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
 
 	return "SCF"
 }
 
 func jrc() string {
-	value := jrCond(Reg.F.GetFlagC(), 1)
+	value := jrCond(flags.GetFlagC(), 1)
 
 	return fmt.Sprintf("JR C, $%X", value)
 }
@@ -1591,15 +1626,15 @@ func deca() string {
 }
 
 func lda() string {
-	Reg.PC.Inc()
 	*Reg.A.Val() = bus.Read(Reg.PC.Get())
+	Reg.PC.Inc()
 
-	return fmt.Sprintf("LD A, $%X", Reg.A.Get())
+	return fmt.Sprintf("LD A, $%.2X", Reg.A.Get())
 }
 
 // Complement Carry Flag
 func ccf() string {
-	Reg.F.SetFlagC(!Reg.F.GetFlagC())
+	flags.SetFlagC(!flags.GetFlagC())
 
 	return "CCF"
 }
@@ -1922,12 +1957,34 @@ func ldhll() string {
 	return "LD (HL), L"
 }
 
-// Halt CPU execution until an interr
+// Halt pauses CPU execution until an interruption take place
 func halt() string {
-	//TODO implement
-	log.Fatal("Not implemented")
+	/*
+		Halt stops the CPU execution, and resumes when an interrupt is pending. An interruption is considered
+		pending when an interrupt is enabled and its flag is set to one, that is IE && IF !=0 for a certain interrupt.
+		The following assumptions take place:
+		With IME = 1:
+		1. With pending interrupt, cpu will not halt.
+		2. The expected behaviour would be the CPU jumping to next instruction
+		2. Interrupt handling takes place
 
-	return "Not Implemented"
+		With IME = 0:
+		1. If no interrupt pending, halt will execute and cpu will pause until an interrupt becomes pending.
+		Interrupt will not be handled as expected with the master interrupt not enabled
+		2. If an interrupt is pending,halt immediately exits. Halt bug might take place as explained below
+
+		HALT Bug:
+		Take place as IME = 0 with an interrupt is pending. Two of the following scenarios can take place
+		1. With no IE instruction before HALT, the byte after halt instruction is read twice
+		2. With IE instruction before HALT (with IME delay affect taking place), the interrupt handler takes place.
+		The handler, however, returns to halt after serviced, causing the cpu to pause again.
+	*/
+
+	// TODO Give the instructions above an index, then refer those index where simulated in cpu and instruction
+	// file
+
+	isHalt = true
+	return "HALT"
 }
 
 func ldhla() string {
@@ -1967,7 +2024,7 @@ func ldah() string {
 }
 
 func ldal() string {
-	*Reg.H.Val() = Reg.L.Get()
+	*Reg.A.Val() = Reg.L.Get()
 
 	return "LD A, L"
 }
@@ -2368,7 +2425,7 @@ func cpaa() string {
 }
 
 func retnz() string {
-	retCond(!Reg.F.GetFlagZ(), 3)
+	retCond(!flags.GetFlagZ(), 3)
 
 	return "RET NZ"
 }
@@ -2380,7 +2437,7 @@ func popbc() string {
 }
 
 func jpnz() string {
-	value := jpCond(!Reg.F.GetFlagZ(), 1)
+	value := jpCond(!flags.GetFlagZ(), 1)
 
 	return fmt.Sprintf("JP, NZ, $%X", value)
 }
@@ -2392,7 +2449,7 @@ func jp() string {
 }
 
 func callnz() string {
-	value := callCond(!Reg.F.GetFlagZ(), 3)
+	value := callCond(!flags.GetFlagZ(), 3)
 
 	return fmt.Sprintf("CALL NZ, $%X", value)
 }
@@ -2418,7 +2475,7 @@ func rst00() string {
 }
 
 func retz() string {
-	retCond(Reg.F.GetFlagZ(), 3)
+	retCond(flags.GetFlagZ(), 3)
 
 	return "RET Z"
 }
@@ -2430,7 +2487,7 @@ func ret() string {
 }
 
 func jpz() string {
-	value := jpCond(Reg.F.GetFlagZ(), 1)
+	value := jpCond(flags.GetFlagZ(), 1)
 
 	return fmt.Sprintf("JP Z, $%X", value)
 }
@@ -2449,7 +2506,7 @@ func prefixcb() string {
 }
 
 func callz() string {
-	value := callCond(Reg.F.GetFlagZ(), 3)
+	value := callCond(flags.GetFlagZ(), 3)
 
 	return fmt.Sprintf("CALL Z, $%X", value)
 }
@@ -2475,7 +2532,7 @@ func rst08() string {
 }
 
 func retnc() string {
-	retCond(!Reg.F.GetFlagC(), 3)
+	retCond(!flags.GetFlagC(), 3)
 
 	return "RET NC"
 }
@@ -2487,13 +2544,13 @@ func popde() string {
 }
 
 func jpnc() string {
-	value := jpCond(!Reg.F.GetFlagC(), 1)
+	value := jpCond(!flags.GetFlagC(), 1)
 
 	return fmt.Sprintf("JP NC, $%X", value)
 }
 
 func callnc() string {
-	value := callCond(!Reg.F.GetFlagC(), 3)
+	value := callCond(!flags.GetFlagC(), 3)
 
 	return fmt.Sprintf("CALL NC, $%X", value)
 }
@@ -2519,7 +2576,7 @@ func rst10() string {
 }
 
 func retc() string {
-	retCond(Reg.F.GetFlagC(), 3)
+	retCond(flags.GetFlagC(), 3)
 
 	return "RET C"
 }
@@ -2533,13 +2590,13 @@ func reti() string {
 }
 
 func jpc() string {
-	value := jpCond(Reg.F.GetFlagC(), 1)
+	value := jpCond(flags.GetFlagC(), 1)
 
 	return fmt.Sprintf("JP C, $%X", value)
 }
 
 func callc() string {
-	value := callCond(Reg.F.GetFlagC(), 3)
+	value := callCond(flags.GetFlagC(), 3)
 
 	return fmt.Sprintf("CALL C, $%X", value)
 }
@@ -2559,13 +2616,12 @@ func rst18() string {
 }
 
 func ldff8a() string {
-	var pos uint16 = 0xFF00
 	var value uint8 = bus.Read(Reg.PC.Get())
-	pos += uint16(value)
 	Reg.PC.Inc()
-	ldmem(pos, Reg.A.Get())
+	var address uint16 = 0xFF00 + uint16(value)
+	ldmem(address, Reg.A.Get())
 
-	return fmt.Sprint("LD (FF00 + $X), A", value)
+	return fmt.Sprintf("LD (FF00 + $%.2X), A", value)
 }
 
 func pophl() string {
@@ -2648,11 +2704,9 @@ func ldaff8() string {
 }
 
 func popaf() string {
-	var pos uint16 = 0xFF00
-	pos += uint16(Reg.C.Get())
-	*Reg.A.Val() = bus.Read(pos)
+	pop16(Reg.A.Val(), flags.Val())
 
-	return "LD A, (FF00 + C)"
+	return "POP AF"
 }
 
 func ldaffc() string {
@@ -2665,12 +2719,14 @@ func ldaffc() string {
 
 func di() string {
 	Reg.IME = false
+	// Cancels any delayed IME is set by IME
+	performIME = false
 
 	return "DI"
 }
 
 func pushaf() string {
-	push16(Reg.A.Get(), Reg.F.Get())
+	push16(Reg.A.Get(), flags.Get())
 
 	return "PUSH AF"
 }
@@ -2693,7 +2749,7 @@ func ldhlsp8() string {
 	value := bus.Read(Reg.PC.Get())
 	Reg.PC.Inc()
 	newValue := Reg.SP.Get() + uint16(value)
-	Reg.F.AffectFlagHC16(Reg.HL.Get(), newValue)
+	flags.AffectFlagHC16(Reg.HL.Get(), newValue)
 	Reg.HL.Set(newValue)
 
 	return fmt.Sprintf("LD HL, SP + $%X", value)
@@ -2714,7 +2770,7 @@ func lda16() string {
 }
 
 func ei() string {
-	Reg.IME = true
+	performIME = true
 
 	return "EI"
 }
@@ -3926,17 +3982,17 @@ func set7a() string {
 // Increment a register by one.
 // Affects Flags Z and H. Sets Flag N to 0
 func incReg(r8 *uint8) {
-	Reg.F.AffectFlagZH(*r8, *r8+1)
-	Reg.F.SetFlagN(false)
+	flags.AffectFlagZH(*r8, *r8+1)
+	flags.SetFlagN(false)
 	*r8++
 }
 
 // Decrement a register by one.
 // Affects Flags Z and H. Sets Flag N to 0
 func decReg(r8 *uint8) {
-	Reg.F.AffectFlagZH(*r8, *r8+1)
-	Reg.F.SetFlagN(true)
-	*r8++
+	flags.AffectFlagZH(*r8, *r8-1)
+	flags.SetFlagN(true)
+	*r8--
 }
 
 // Add value to register HL
@@ -3952,8 +4008,8 @@ func addhlReg16(value uint16) {
 	curHL := Reg.HL.Get()
 	nextVal := curHL + value
 	Reg.HL.Set(nextVal)
-	Reg.F.SetFlagN(false)
-	Reg.F.AffectFlagHC16(curHL, nextVal)
+	flags.SetFlagN(false)
+	flags.AffectFlagHC16(curHL, nextVal)
 }
 
 // Relate Jump according to condition. Additional ticks will be added
@@ -3999,15 +4055,15 @@ func ldhlind(value uint8) {
 func adda(value uint8) {
 	curVal := Reg.A.Get()
 	*Reg.A.Val() += value
-	Reg.F.AffectFlagZHC(curVal, Reg.A.Get())
-	Reg.F.SetFlagN(false)
+	flags.AffectFlagZHC(curVal, Reg.A.Get())
+	flags.SetFlagN(false)
 }
 
 // Adds value plus carry to the Accumulator
 // Affects Flags Z, H and C
 // Set Flag N to Zero
 func adca(value uint8) {
-	if Reg.F.GetFlagC() {
+	if flags.GetFlagC() {
 		value++
 	}
 	adda(value)
@@ -4019,15 +4075,15 @@ func adca(value uint8) {
 func suba(value uint8) {
 	curVal := Reg.A.Get()
 	*Reg.A.Val() -= value
-	Reg.F.AffectFlagZHC(curVal, Reg.A.Get())
-	Reg.F.SetFlagN(false)
+	flags.AffectFlagZHC(curVal, Reg.A.Get())
+	flags.SetFlagN(false)
 }
 
 // Subtracts (value plus carry) from the Accumulator
 // Affects Flags Z, H and C
 // Set Flag N to One
 func sbca(value uint8) {
-	if Reg.F.GetFlagC() {
+	if flags.GetFlagC() {
 		value++
 	}
 	suba(value)
@@ -4039,10 +4095,10 @@ func sbca(value uint8) {
 // Set Flag H to One
 func anda(value uint8) {
 	*Reg.A.Val() &= value
-	Reg.F.SetFlagZ(Reg.A.Get() == 0)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagC(false)
-	Reg.F.SetFlagH(true)
+	flags.SetFlagZ(Reg.A.Get() == 0)
+	flags.SetFlagN(false)
+	flags.SetFlagC(false)
+	flags.SetFlagH(true)
 }
 
 // Bitwise XOR between Accumulator and given value
@@ -4050,10 +4106,10 @@ func anda(value uint8) {
 // Set Flags N, H and C to Zero
 func xora(value uint8) {
 	*Reg.A.Val() ^= value
-	Reg.F.SetFlagZ(Reg.A.Get() == 0)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(false)
+	flags.SetFlagZ(Reg.A.Get() == 0)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(false)
 }
 
 // Bitwise OR between Accumulator and given value
@@ -4061,10 +4117,10 @@ func xora(value uint8) {
 // Set Flags N, H and C to Zero
 func ora(value uint8) {
 	*Reg.A.Val() |= value
-	Reg.F.SetFlagZ(Reg.A.Get() == 0)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(false)
+	flags.SetFlagZ(Reg.A.Get() == 0)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(false)
 }
 
 // Subtracts value from Accumulator without storing result
@@ -4072,7 +4128,7 @@ func ora(value uint8) {
 // Set Flag N to One
 func cpa(value uint8) {
 	result := Reg.A.Get() - value
-	Reg.F.AffectFlagZHC(Reg.A.Get(), result)
+	flags.AffectFlagZHC(Reg.A.Get(), result)
 }
 
 // Return from subroutine if condition met.
@@ -4082,8 +4138,12 @@ func retCond(condition bool, addTicks uint8) {
 	}
 
 	ticks += addTicks
-	Reg.PC.Set(bus.Read16(Reg.SP.Get()))
 	Reg.SP.Inc()
+	low := bus.Read(Reg.SP.Get())
+	Reg.SP.Inc()
+	high := bus.Read(Reg.SP.Get())
+	Reg.PC.Set(util.To16(high, low))
+	//fmt.Printf("Return to %s ", Reg.PC)
 }
 
 // Load value from memory at location SP and SP + 1
@@ -4091,8 +4151,9 @@ func retCond(condition bool, addTicks uint8) {
 // high <- [SP+1]
 // SP is increment by two afterward
 func pop16(high, low *uint8) {
-	*low, *high = util.From16(bus.Read16(Reg.PC.Get()))
-	Reg.SP.Inc().Inc()
+	Reg.SP.Inc()
+	*high, *low = util.From16(bus.Read16(Reg.SP.Get()))
+	Reg.SP.Inc()
 }
 
 // Store value to the Stack
@@ -4151,10 +4212,10 @@ func rlcVal(value uint8) uint8 {
 	if bit7 {
 		value |= 1
 	}
-	Reg.F.SetFlagZ(value == 0)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(bit7)
+	flags.SetFlagZ(value == 0)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(bit7)
 
 	return value
 }
@@ -4175,10 +4236,10 @@ func rrcVal(value uint8) uint8 {
 	if bit0 {
 		value |= 0x80
 	}
-	Reg.F.SetFlagZ(false)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(bit0)
+	flags.SetFlagZ(false)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(bit0)
 
 	return value
 }
@@ -4196,7 +4257,7 @@ func rlReg(r8 *uint8) {
 // Bit 7 shift to Carry
 // C <- [7~0] <- C
 func rl(value uint8) uint8 {
-	oldCarry := Reg.F.GetFlagC()
+	oldCarry := flags.GetFlagC()
 	value = sla(value)
 	// If carry flag is 1
 	if oldCarry {
@@ -4219,7 +4280,7 @@ func rrReg(r8 *uint8) {
 // Bit 0 shifts to Carry
 // C -> [7~0] -> C
 func rr(value uint8) uint8 {
-	oldCarry := Reg.F.GetFlagC()
+	oldCarry := flags.GetFlagC()
 	value = sra(value)
 	// If carry flag is 1
 	if oldCarry {
@@ -4242,10 +4303,10 @@ func slaReg(r8 *uint8) {
 func sla(value uint8) uint8 {
 	var bit7 bool = value&0x80 == 0x80
 	value <<= 1
-	Reg.F.SetFlagZ(value == 0)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(bit7)
+	flags.SetFlagZ(value == 0)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(bit7)
 
 	return value
 }
@@ -4265,10 +4326,10 @@ func sraReg(r8 *uint8) {
 func sra(value uint8) uint8 {
 	var bit0 bool = value&0x1 == 0x1
 	value = value&0x80 | (value >> 1)
-	Reg.F.SetFlagZ(value == 0)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(bit0)
+	flags.SetFlagZ(value == 0)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(bit0)
 
 	return value
 }
@@ -4298,10 +4359,10 @@ func srlReg(r8 *uint8) {
 func srl(value uint8) uint8 {
 	var bit0 bool = value&0x1 == 0x1
 	value >>= 1
-	Reg.F.SetFlagZ(value == 0)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(false)
-	Reg.F.SetFlagC(bit0)
+	flags.SetFlagZ(value == 0)
+	flags.SetFlagN(false)
+	flags.SetFlagH(false)
+	flags.SetFlagC(bit0)
 
 	return value
 }
@@ -4336,9 +4397,9 @@ func bitNumHL(pos uint8) string {
 func bit(pos uint8, value uint8) {
 	var mask uint8 = 0x01 << pos
 	var isSet bool = value&mask == mask
-	Reg.F.SetFlagZ(!isSet)
-	Reg.F.SetFlagN(false)
-	Reg.F.SetFlagH(true)
+	flags.SetFlagZ(!isSet)
+	flags.SetFlagN(false)
+	flags.SetFlagH(true)
 }
 
 // Set a bit to zero at given position of a register

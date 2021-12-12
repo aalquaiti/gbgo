@@ -1,6 +1,8 @@
 package cpu
 
 import (
+	"fmt"
+
 	"github.com/aalquaiti/gbgo/io"
 	"github.com/aalquaiti/gbgo/util"
 )
@@ -9,10 +11,10 @@ const (
 	INST_SIZE = 0x100      // Instruction Size
 	DMG_HZ    = 0x100000   // Game Boy Frequency (m-ticks)
 	CGB_HZ    = DMG_HZ * 2 // Game Boy Color Frequency (m-ticks)
-	DIV_RATE  = 0xFFF      // Dividor Increment Rate
+	DIV_RATE  = 0xFFF      // Divider Increment Rate
 )
 
-// Game Boy CPU Mode
+// Mode Game Boy CPU Mode
 type Mode int
 
 const (
@@ -27,9 +29,21 @@ var (
 	cycles uint32 // m-ticks count. Helps with timer functionality
 	steps  uint32 // Counts how many instructions executed
 	Reg    Register
+	flags  *RegF
 	curOP  uint8 // Current Op to execute. Used in cpu fetch phase
 	inst   [INST_SIZE]Instruction
 	cbInst [INST_SIZE]Instruction
+)
+
+// Variables that are used by CPU to help perform some of the instructions
+var (
+	// IsHalt Used by HALT instruction to inform the cpu to halt until an interrupt occurs. This helps with interruption
+	// handling that breaks the halt, and to emulate the HALT bug
+	isHalt bool
+
+	//  Used by EI instruction to set IME. The EI has a delay one of one cycle, so IME will be set to one after the
+	// execution of the next instruction following EI.
+	performIME bool
 )
 
 // Variables that should be treated as immutable.
@@ -56,26 +70,50 @@ func Reset() {
 	ticks = 0
 	cycles = 0
 	Reg = NewRegister()
+	flags, _ = Reg.F.(*RegF)
 	curOP = 0
+	isHalt = false
+
+	// Power-Up Sequence for DMG
+	// TODO Add power-up sequence of CGB
+	Reg.A.Set(0x01)
+	// TODO Reg F value depends on header checksum. Make amends according
+	// Refer to https://gbdev.io/pandocs/Power_Up_Sequence.html
+	Reg.F.Set(0xB0)
+	Reg.B.Set(0x00)
+	Reg.C.Set(0x13)
+	Reg.D.Set(0x00)
+	Reg.E.Set(0xD8)
+	Reg.H.Set(0x01)
+	Reg.L.Set(0x4D)
+	Reg.PC.Set(0x100)
+	Reg.SP.Set(0xFFFE)
 }
 
-// Step ticks a cpu until a op is executed
+// Step ticks a cpu until an op is executed
 func Step() {
 	steps++
-	// currentPC := Reg.PC.Get()
-	// output := Tick()
-	Tick()
+	currentPC := Reg.PC.Get()
+	af := Reg.AF.String()
+	bc := Reg.BC.String()
+	de := Reg.DE.String()
+	hl := Reg.HL.String()
+	pc := Reg.PC.String()
+	sp := Reg.SP.String()
+	output := Tick()
+	// Tick()
 
 	for ticks > 0 {
 		Tick()
 	}
 
-	// fmt.Printf("%04d  PC:%04X \t %s \n", steps, currentPC, output)
+	fmt.Printf("%.04X:\t%-30s %s, %s, %s, %s, %s, %s\n",
+		currentPC, output, bc, de, hl, af, sp, pc)
 }
 
 // timer handles functionality related to divider and timer
 func timer() {
-	// When count reaches Dividor rate
+	// When count reaches Divider rate
 	if cycles&DIV_RATE == DIV_RATE {
 		// TODO emulate CGB double speed effect
 		bus.IncDIV()
@@ -104,7 +142,7 @@ func timer() {
 	// This will shows if the time should be incremented
 	// TODO: Add an example for clarity
 	timeRate -= 1
-	var timeReached bool = cycles&timeRate == timeRate
+	timeReached := cycles&timeRate == timeRate
 
 	if timeReached {
 		// When Timer is Enabled and Timer Counter overflow,
@@ -121,39 +159,55 @@ func timer() {
 	}
 }
 
-// irq haanndles Interrupt request
+// irq handles Interrupt request
 func irq() {
+
 	// Checks is Master Interrupt is enabled,
-	// Ignores intterupts if disabled
+	// Ignores interrupts if disabled
 	if !Reg.IME {
+
+		// Having an interrupt pending breaks the halt loop if one was requested through HALT operation
+		// See more details in halt() function
+		if bus.InterruptPending() {
+			// TODO simulate the halt bug by reading the instruction the follow HALT twice
+			isHalt = false
+		}
+
 		return
 	}
 
-	// Disable further Intterupts. This is a CPU behaviour when an
-	// interrupt is to be executed. So further interrupts must be enabled
-	// by the program (Usually using RETI instruction when returning from
-	// an interrupt vector)
+	// Disable further Interrupts. This is a CPU behaviour when an interrupt is to be executed. So further interrupts
+	// must be enabled by the program (Usually using RETI instruction when returning from an interrupt vector)
 	Reg.IME = false
 
+	// CPU will continue activity it was paused by a HALt instruction
+	isHalt = false
+	// TODO check if isHalt is true, follows after IE instruction and an interrupt is pending
+	// In this case, simulate the halt bug by setting the PC back to the halt instruction
+
+	// The handler should add five cycles as follows:
+	// Two m-cyles before pushing PC
+	// Two m-cycles after pushing PC
+	// One m-cycle after setting handler vector
+	if bus.InterruptPending() {
+		ticks += 5
+		push16(util.From16(Reg.PC.Get()))
+	}
 	if bus.IsVblank() && bus.IrqVblank() {
 		bus.SetIrQVblank(false)
-		push16(util.From16(Reg.PC.Get()))
+
 		Reg.PC.Set(0x40)
 	} else if bus.IsLCDStat() && bus.IrqLCDStat() {
 		bus.SetIRQLCDStat(false)
-		push16(util.From16(Reg.PC.Get()))
 		Reg.PC.Set(0x48)
 	} else if bus.IsTimerInt() && bus.IrqTimer() {
 		bus.SetIRQTimer(false)
-		push16(util.From16(Reg.PC.Get()))
 		Reg.PC.Set(0x50)
 	} else if bus.IsSerialInt() && bus.IrqSerial() {
 		bus.SetIrqSerial(false)
-		push16(util.From16(Reg.PC.Get()))
 		Reg.PC.Set(0x58)
 	} else if bus.IsJoypadInt() && bus.IrqJoypad() {
 		bus.SetIrqJoypad(false)
-		push16(util.From16(Reg.PC.Get()))
 		Reg.PC.Set(0x60)
 	}
 
@@ -166,7 +220,7 @@ func irq() {
 // string if in the middle of execution
 func Tick() string {
 
-	// Count is important for handling time. Therefore it should not
+	// Count is important for handling time. Therefore, it should not
 	// exceed cpu frequency value
 	if cycles == CPU_FREQ() {
 		cycles = 0
@@ -175,8 +229,7 @@ func Tick() string {
 	// m-ticks needs to be finished before executing
 	// the cycle again
 	if ticks > 0 {
-		ticks--
-		cycles++
+		advance()
 		return ""
 	}
 
@@ -184,6 +237,13 @@ func Tick() string {
 	// the current simulated bulks of ticks
 	timer()
 	irq()
+
+	// Check if halt was requested (using HALT operation)
+	// Halt can be broken if an interrupt occurs
+	if isHalt {
+		advance()
+		return ""
+	}
 
 	// Fetch instruction
 	curOP = bus.Read(Reg.PC.Get())
@@ -197,9 +257,19 @@ func Tick() string {
 	ticks += instruction.ticks
 	output := instruction.execute()
 
-	timer()
-	ticks--
-	cycles++
+	// Emulates the IE instruction Delay
+	if performIME == true && curOP != 0xFB {
+		Reg.IME = true
+		performIME = false
+	}
+
+	advance()
 
 	return output
+}
+
+// advance a cpu tick
+func advance() {
+	ticks--
+	cycles++
 }

@@ -1,44 +1,38 @@
 package cpu
 
 import (
+	"fmt"
+
 	"github.com/aalquaiti/gbgo/util"
 	"github.com/golang/glog"
 )
 
-// Registers represents all registers in a CPU
-// type Registers struct {
-// 	// TODO Add comments
-// 	A, F, B, C, D, E, H, L uint8
-// 	SP, PC                 uint16
-// 	// Interrupt Master Enable Flag
-// 	IME bool
-// }
-
 // Reg8 represents an 8-bit Register
 type Reg8 interface {
+	fmt.Stringer
 	Val() *uint8 // Pointer to the variable holding the value
+	Name() string
 	Get() uint8
 	Set(uint8) Reg8
 	Inc() Reg8
 	Dec() Reg8
-	String() string
 }
 
 // Reg16 represents a 16-bit Register
 type Reg16 interface {
+	fmt.Stringer
+	Name() string
 	Get() uint16
 	Set(uint16) Reg16
 	Inc() Reg16
 	Dec() Reg16
-	String() string
 }
 
 // Register represents all registers in a CPU
 type Register struct {
-	A, B, C, D, E, H, L Reg8
-	F                   RegF
-	AF, BC, DE, HL      Reg16
-	SP, PC              Reg16
+	A, F, B, C, D, E, H, L Reg8
+	AF, BC, DE, HL         Reg16
+	SP, PC                 Reg16
 	// Interrupt Master Enable Flag
 	IME bool
 }
@@ -48,6 +42,7 @@ func NewRegister() Register {
 
 	// 8-bit Registers
 	reg.A = &reg8Impl{name: "A"}
+	reg.F = &RegF{}
 	reg.B = &reg8Impl{name: "B"}
 	reg.C = &reg8Impl{name: "C"}
 	reg.D = &reg8Impl{name: "D"}
@@ -55,15 +50,11 @@ func NewRegister() Register {
 	reg.H = &reg8Impl{name: "H"}
 	reg.L = &reg8Impl{name: "L"}
 
-	// Register F has different functionality as only the four upper bits
-	// are used
-	reg.F = RegF{}
-
 	// 16-bit Registers consisting of two 8-bits
-	reg.AF = &reg16From8Impl{high: reg.A, low: &reg.F, name: "AF"}
-	reg.BC = &reg16From8Impl{high: reg.B, low: reg.C, name: "BC"}
-	reg.DE = &reg16From8Impl{high: reg.D, low: reg.E, name: "DE"}
-	reg.HL = &reg16From8Impl{high: reg.H, low: reg.L, name: "HL"}
+	reg.AF = &reg16From8Impl{high: reg.A, low: reg.F}
+	reg.BC = &reg16From8Impl{high: reg.B, low: reg.C}
+	reg.DE = &reg16From8Impl{high: reg.D, low: reg.E}
+	reg.HL = &reg16From8Impl{high: reg.H, low: reg.L}
 
 	// 16-bit Registers
 	reg.SP = &reg16Impl{name: "SP"}
@@ -81,6 +72,11 @@ type reg8Impl struct {
 func (r *reg8Impl) Val() *uint8 {
 
 	return &r.value
+}
+
+func (r *reg8Impl) Name() string {
+
+	return r.name
 }
 
 func (r *reg8Impl) Get() uint8 {
@@ -106,13 +102,18 @@ func (r *reg8Impl) Dec() Reg8 {
 }
 
 func (r *reg8Impl) String() string {
-	return r.name
+	return fmt.Sprintf("%s=%.2X", r.name, r.value)
 }
 
 // reg16From8Impl implements Reg16 interface that represents a 16-bit register
 type reg16Impl struct {
 	value uint16
 	name  string
+}
+
+func (r *reg16Impl) Name() string {
+
+	return r.name
 }
 
 func (r *reg16Impl) Get() uint16 {
@@ -138,14 +139,18 @@ func (r *reg16Impl) Dec() Reg16 {
 }
 
 func (r *reg16Impl) String() string {
-	return r.name
+	return fmt.Sprintf("%s=%.4X", r.name, r.value)
 }
 
 // reg16From8Impl implements Reg16 interface that represents two 8-bit register
 type reg16From8Impl struct {
 	high Reg8
 	low  Reg8
-	name string
+}
+
+func (r *reg16From8Impl) Name() string {
+
+	return r.high.Name() + r.low.Name()
 }
 
 func (r *reg16From8Impl) Get() uint16 {
@@ -173,7 +178,7 @@ func (r *reg16From8Impl) Dec() Reg16 {
 }
 
 func (r *reg16From8Impl) String() string {
-	return r.name
+	return fmt.Sprintf("%s=%.04X", r.Name(), r.Get())
 }
 
 // RegF represents Flag Register
@@ -183,6 +188,10 @@ type RegF struct {
 
 func (r *RegF) Val() *uint8 {
 	return &r.value
+}
+
+func (r *RegF) Name() string {
+	return "F"
 }
 
 // Returns F Flag value, with first four bits always set to Zero
@@ -211,8 +220,8 @@ func (r *RegF) Dec() Reg8 {
 	return r
 }
 
-func (r *RegF) String() string {
-	return "F"
+func (r RegF) String() string {
+	return fmt.Sprintf("F=%.2X", r.value)
 }
 
 func (r *RegF) GetFlagZ() bool {
