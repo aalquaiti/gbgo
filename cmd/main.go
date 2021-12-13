@@ -28,9 +28,9 @@ func main() {
 	//	//}
 	//}
 
-	//for {
-	//	cpu.Step()
-	//}
+	for {
+		cpu.Step()
+	}
 
 	//for {
 	//	cpu.Step()
