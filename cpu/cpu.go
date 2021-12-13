@@ -2,9 +2,9 @@ package cpu
 
 import (
 	"fmt"
+	bit2 "github.com/aalquaiti/gbgo/bit"
 
 	"github.com/aalquaiti/gbgo/io"
-	"github.com/aalquaiti/gbgo/util"
 )
 
 const (
@@ -49,11 +49,11 @@ var (
 // Variables that should be treated as immutable.
 // Access should be through functions
 var (
-	cpuFreq uint32
+	freq uint32
 )
 
-func CPU_FREQ() uint32 {
-	return cpuFreq
+func Frequency() uint32 {
+	return freq
 }
 
 // Init Initialise CPU
@@ -126,7 +126,7 @@ func timer() {
 	// 01: CPU Clock / 0x10   = 0x10000 Hz
 	// 10: CPU Clock / 0x40   = 0x4000 Hz
 	// 11: CPU Clock / 0x100  = 0x1000 Hz
-	timeRate := CPU_FREQ()
+	timeRate := Frequency()
 	switch bus.GetTacClockSelect() {
 	case 0b00:
 		timeRate /= 0x1000
@@ -148,12 +148,12 @@ func timer() {
 		// When Timer is Enabled and Timer Counter overflow,
 		// set Timer counter to value stored in TMA and request a
 		// Timer interrupt
-		timaCount := bus.Read(io.TIMA_ADDR)
+		timaCount := bus.Read(io.TimaAddr)
 		if bus.IsTacTimerEnabled() && timaCount == 0xFF {
-			bus.Write(io.TIMA_ADDR, bus.Read(io.TMA_ADDR))
+			bus.Write(io.TimaAddr, bus.Read(io.TmaAddr))
 			bus.SetIRQTimer(true)
 		} else {
-			bus.Write(io.TIMA_ADDR, timaCount+1)
+			bus.Write(io.TimaAddr, timaCount+1)
 		}
 
 	}
@@ -191,7 +191,7 @@ func irq() {
 	// One m-cycle after setting handler vector
 	if bus.InterruptPending() {
 		ticks += 5
-		push16(util.From16(Reg.PC.Get()))
+		push16(bit2.From16(Reg.PC.Get()))
 	}
 	if bus.IsVblank() && bus.IrqVblank() {
 		bus.SetIrQVblank(false)
@@ -222,7 +222,7 @@ func Tick() string {
 
 	// Count is important for handling time. Therefore, it should not
 	// exceed cpu frequency value
-	if cycles == CPU_FREQ() {
+	if cycles == Frequency() {
 		cycles = 0
 	}
 

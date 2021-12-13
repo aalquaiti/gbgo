@@ -2,8 +2,8 @@ package cpu
 
 import (
 	"fmt"
+	bit2 "github.com/aalquaiti/gbgo/bit"
 
-	"github.com/aalquaiti/gbgo/util"
 	"github.com/golang/glog"
 )
 
@@ -154,11 +154,11 @@ func (r *reg16From8Impl) Name() string {
 }
 
 func (r *reg16From8Impl) Get() uint16 {
-	return util.To16(r.high.Get(), r.low.Get())
+	return bit2.To16(r.high.Get(), r.low.Get())
 }
 
 func (r *reg16From8Impl) Set(value uint16) Reg16 {
-	high, low := util.From16(value)
+	high, low := bit2.From16(value)
 	r.high.Set(high)
 	r.low.Set(low)
 
@@ -220,7 +220,7 @@ func (r *RegF) Dec() Reg8 {
 	return r
 }
 
-func (r RegF) String() string {
+func (r *RegF) String() string {
 	return fmt.Sprintf("F=%.2X", r.value)
 }
 

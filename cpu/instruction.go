@@ -2,7 +2,7 @@ package cpu
 
 import (
 	"fmt"
-	"github.com/aalquaiti/gbgo/util"
+	bit2 "github.com/aalquaiti/gbgo/bit"
 )
 
 // Instruction defines a CPU instruction
@@ -3999,7 +3999,7 @@ func decReg(r8 *uint8) {
 // Value comes in most significant byte (high) and least
 // significant byte
 func addhlReg(high, low uint8) {
-	addhlReg16(util.To16(high, low))
+	addhlReg16(bit2.To16(high, low))
 }
 
 // Add a 16-bit value to register HL
@@ -4142,7 +4142,7 @@ func retCond(condition bool, addTicks uint8) {
 	low := bus.Read(Reg.SP.Get())
 	Reg.SP.Inc()
 	high := bus.Read(Reg.SP.Get())
-	Reg.PC.Set(util.To16(high, low))
+	Reg.PC.Set(bit2.To16(high, low))
 	//fmt.Printf("Return to %s ", Reg.PC)
 }
 
@@ -4152,7 +4152,7 @@ func retCond(condition bool, addTicks uint8) {
 // SP is increment by two afterward
 func pop16(high, low *uint8) {
 	Reg.SP.Inc()
-	*high, *low = util.From16(bus.Read16(Reg.SP.Get()))
+	*high, *low = bit2.From16(bus.Read16(Reg.SP.Get()))
 	Reg.SP.Inc()
 }
 
@@ -4184,7 +4184,7 @@ func callCond(condition bool, addTicks uint8) uint16 {
 // Calls a subroutine
 // Current PC value is pushed to stack and PC is set to value
 func callmem(value uint16) {
-	push16(util.From16(Reg.PC.Get()))
+	push16(bit2.From16(Reg.PC.Get()))
 	Reg.PC.Set(value)
 }
 

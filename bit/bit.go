@@ -1,4 +1,4 @@
-package util
+package bit
 
 // To16 Combine two 8-bit values to one 16-bit value
 func To16(rHigh, rLow uint8) uint16 {

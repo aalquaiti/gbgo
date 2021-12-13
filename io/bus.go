@@ -12,35 +12,36 @@ type Device interface {
 }
 
 const (
-	VRAM_SIZE = 0x2000
-	WRAM_SIZE = 0x2000
-	OAM_SIZE  = 0xA0
-	IO_SIZE   = 0x80
-	HRAM_SIZE = 0x7F
-	DIV_ADDR  = 0xFF04 // Divider Register Address
-	TIMA_ADDR = 0xFF05 // Timer Counter Address
-	TMA_ADDR  = 0xFF06 // Timer Modulo Address
-	TAC_ADDR  = 0xFF07 // Time Control Address
+	MaxRomAddr = 0xFFF
+	VramSize   = 0x2000
+	WramSize   = 0x2000
+	OamSize    = 0xA0
+	IoSize     = 0x80
+	HRamSize   = 0x7F
+	DivAddr    = 0xFF04 // Divider Register Address
+	TimaAddr   = 0xFF05 // Timer Counter Address
+	TmaAddr    = 0xFF06 // Timer Modulo Address
+	TacAddr    = 0xFF07 // Time Control Address
 )
 
 type Bus struct {
 	Rom  Device
-	VRam [VRAM_SIZE]uint8 // Video RAM
-	WRam [WRAM_SIZE]uint8 // Work RAM
-	Oam  [OAM_SIZE]uint8  // Object Attribute Memory
-	IO   [IO_SIZE]uint8   // IO Registers
-	HRam [HRAM_SIZE]uint8 // High RAM
-	IE   uint8            // Interrupt Enable Register
+	VRam [VramSize]uint8 // Video RAM
+	WRam [WramSize]uint8 // Work RAM
+	Oam  [OamSize]uint8  // Object Attribute Memory
+	IO   [IoSize]uint8   // IO Registers
+	HRam [HRamSize]uint8 // High RAM
+	IE   uint8           // Interrupt Enable Register
 }
 
-// Creates New Bus
+// NewBus Creates New Bus
 func NewBus(rom Device) Bus {
 	return Bus{Rom: rom}
 }
 
-// Returns an 8-bit value from associated device connected to bus
+// Read Returns an 8-bit value from associated device connected to bus
 // 0x0000 to 0x7FFF		ROM (Handled by Cartridge)
-// 0x8000 to 0x9FFF		VRAM
+// 0x8000 to 0x9FFF		Vram
 // 0xA000 to 0xBFFF		External RAM (Handled by Cartridge)
 // 0xC000 to 0xDFFF		Work RAM (WRAM)
 // 0xE000 to 0xFDFF		Echo. Mirrors 0xC000 to 0xDFFF
@@ -59,8 +60,7 @@ func (b *Bus) Read(address uint16) uint8 {
 		return b.VRam[address&0x7FFF]
 	// External RAM
 	case address <= 0xBFFF:
-		// TODO Implement
-		return 0
+		return b.Rom.Read(address)
 	// WRAM
 	case address <= 0xDFFF:
 		// TODO add CGB mode with switchable bank (1 to 7)
@@ -95,21 +95,21 @@ func (b *Bus) Read(address uint16) uint8 {
 	}
 }
 
-// Returns an 8-bit tuple from memory as address and address + 1
+// Read16As8 returns an 8-bit tuple from memory as address and address + 1
 // The first return byte is the least significant byte (low)
 // the second return byte is the most significant byte (high)
 func (b *Bus) Read16As8(address uint16) (uint8, uint8) {
 	return b.Read(address), b.Read(address + 1)
 }
 
-// Returns an 16-bit value from associated device connected to bus
+// Read16 returns an 16-bit value from associated device connected to bus
 func (b *Bus) Read16(pos uint16) uint16 {
 	low, high := b.Read16As8(pos)
 
 	return uint16(high)<<8 + uint16(low)
 }
 
-// Writes an 8-bit value to associated device connected to bus
+// Write an 8-bit value to associated device connected to bus
 // 0x0000 to 0x7FFF		ROM (Handled by Cartridge)
 // 0x8000 to 0x9FFF		VRAM
 // 0xA000 to 0xBFFF		External RAM (Handled by Cartridge)
@@ -130,8 +130,7 @@ func (b *Bus) Write(address uint16, value uint8) {
 		b.VRam[address&0x7FFF] = value
 	// External RAM
 	case address <= 0xBFFF:
-		// TODO Implement
-		log.Fatal("Writing to External Ram Not Implemented")
+		b.Rom.Write(address, value)
 	// WRAM
 	case address <= 0xDFFF:
 		// TODO add CGB mode with switchable bank (1 to 7)
@@ -175,13 +174,13 @@ func (b *Bus) Write(address uint16, value uint8) {
 	}
 }
 
-// Writes a 16-bit value to associated device connected to bus
+// Write16 writes a 16-bit value to associated device connected to bus
 func (b *Bus) Write16(address uint16, value uint16) {
 	b.Write(address, uint8(value))
 	b.Write(address+1, uint8(value>>8))
 }
 
-// HelperFunctions
+// region HelperFunctions
 
 // ReadIE returns the value of Interrupt Enable Register at address 0xFFFF
 func (b *Bus) ReadIE() uint8 {
@@ -199,12 +198,11 @@ func (b *Bus) InterruptPending() bool {
 	return (b.IE & b.IO[0x0F]) != 0
 }
 
-// Checks if VBlank Interrupt is Enabled
+// IsVblank determines if VBlank Interrupt is Enabled
 func (b *Bus) IsVblank() bool {
 	return b.IE&0x01 == 0x01
 }
 
-// Set VBlank Interrupt
 func (b *Bus) SetVblank(enable bool) {
 	if enable {
 		b.IE |= 0b00000001
@@ -213,12 +211,11 @@ func (b *Bus) SetVblank(enable bool) {
 	}
 }
 
-// Checks if LCD Status Interrupt is Enabled
+// IsLCDStat determines if LCD Status Interrupt is Enabled
 func (b *Bus) IsLCDStat() bool {
 	return b.IE&0x02 == 0x02
 }
 
-// Set LCD Status Interrupt
 func (b *Bus) SetLCDStat(enable bool) {
 	if enable {
 		b.IE |= 0b00000010
@@ -227,12 +224,11 @@ func (b *Bus) SetLCDStat(enable bool) {
 	}
 }
 
-// Checks if Timer Interrupt is Enabled
+// IsTimerInt determines if Timer Interrupt is Enabled
 func (b *Bus) IsTimerInt() bool {
 	return b.IE == 0x04
 }
 
-// Set Timer Interrupt
 func (b *Bus) SetTimerInt(enable bool) {
 	if enable {
 		b.IE |= 0b00000100
@@ -241,12 +237,11 @@ func (b *Bus) SetTimerInt(enable bool) {
 	}
 }
 
-// Checks if Serial Interrupt is Enabled
+// IsSerialInt determines if Serial Interrupt is Enabled
 func (b *Bus) IsSerialInt() bool {
 	return b.IE&0x04 == 0x04
 }
 
-// Set Serial Interrupt
 func (b *Bus) SetSerialInt(enable bool) {
 	if enable {
 		b.IE |= 0b00001000
@@ -255,12 +250,11 @@ func (b *Bus) SetSerialInt(enable bool) {
 	}
 }
 
-// Checks if Joypad Interrupt is Enabled
+// IsJoypadInt determines if Joypad Interrupt is Enabled
 func (b *Bus) IsJoypadInt() bool {
 	return b.IE&0x08 == 0x08
 }
 
-// Set Joypad Interrupt
 func (b *Bus) SetJoypad(enable bool) {
 	if enable {
 		b.IE |= 0b00010000
@@ -269,12 +263,11 @@ func (b *Bus) SetJoypad(enable bool) {
 	}
 }
 
-// Checks if VBlank Interrupt is Requested
+// IrqVblank determines if VBlank Interrupt is Requested
 func (b *Bus) IrqVblank() bool {
 	return b.IO[0x0F]&0x01 == 0x01
 }
 
-// Set VBlank Interrupt Request
 func (b *Bus) SetIrQVblank(enable bool) {
 	if enable {
 		b.IO[0x0F] |= 0b00000001
@@ -283,12 +276,11 @@ func (b *Bus) SetIrQVblank(enable bool) {
 	}
 }
 
-// Checks if LCD Status Interrupt is Requested
+// IrqLCDStat determines if LCD Status Interrupt is Requested
 func (b *Bus) IrqLCDStat() bool {
 	return b.IO[0x0F]&0x02 == 0x02
 }
 
-// Set LCD Status Interrupt Request
 func (b *Bus) SetIRQLCDStat(enable bool) {
 	if enable {
 		b.IO[0x0F] |= 0b00000010
@@ -297,12 +289,11 @@ func (b *Bus) SetIRQLCDStat(enable bool) {
 	}
 }
 
-// Checks if Timer Interrupt is Requested
+// IrqTimer determines if Timer Interrupt is Requested
 func (b *Bus) IrqTimer() bool {
 	return b.IO[0x0F]&0x04 == 0x04
 }
 
-// Set Timer Interrupt Request
 func (b *Bus) SetIRQTimer(enable bool) {
 	if enable {
 		b.IO[0x0F] |= 0b00000100
@@ -311,12 +302,11 @@ func (b *Bus) SetIRQTimer(enable bool) {
 	}
 }
 
-// Checks if Serial Interrupt is Requested
+// IrqSerial determines if Serial Interrupt is Requested
 func (b *Bus) IrqSerial() bool {
 	return b.IO[0x0F]&0x08 == 0x08
 }
 
-// Set Serial Interrupt Request
 func (b *Bus) SetIrqSerial(enable bool) {
 	if enable {
 		b.IO[0x0F] |= 0b00001000
@@ -325,12 +315,11 @@ func (b *Bus) SetIrqSerial(enable bool) {
 	}
 }
 
-// Checks if Joypad Interrupt is Requested
+// IrqJoypad determines if Joypad Interrupt is Requested
 func (b *Bus) IrqJoypad() bool {
 	return b.IO[0x0F]&0x10 == 0x10
 }
 
-// Set Joypad Interrupt Request
 func (b *Bus) SetIrqJoypad(enable bool) {
 	if enable {
 		b.IO[0x0F] |= 0b00010000
@@ -339,23 +328,23 @@ func (b *Bus) SetIrqJoypad(enable bool) {
 	}
 }
 
-// Increment Divider Register by one.
+// IncDIV Increment Divider Register by one.
 // This is used instead of Write() function as writing to the Divider
 // Register using that function to reset its value, as an expected
 // behaviour by the game boy bus
 func (b *Bus) IncDIV() {
-	b.IO[DIV_ADDR&0xFF]++
+	b.IO[DivAddr&0xFF]++
 }
 
-// Checks Timer Control (TAC) bit 2 to determine if Timer is Enabled.
-// when enabled, Timer Counter can be incremented. This does not
-// affect Divider Register
+// IsTacTimerEnabled determines Timer Control (TAC) bit 2 to determine if Timer is Enabled. When enabled, Timer Counter
+// can be incremented. This does not affect Divider Register
 func (b *Bus) IsTacTimerEnabled() bool {
-	return b.IO[TAC_ADDR&0xFF]&0b100 == 0b100
+	return b.IO[TacAddr&0xFF]&0b100 == 0b100
 }
 
-// Retrieve Timer Contrl (TAC) bits 0 and 1 that determine the Clock
-// Selected for Timer Counter
+// GetTacClockSelect Retrieve Timer Control (TAC) bits 0 and 1 that determine the Clock Selected for Timer Counter
 func (b *Bus) GetTacClockSelect() uint8 {
-	return b.IO[TAC_ADDR&0xFF] & 0b11
+	return b.IO[TacAddr&0xFF] & 0b11
 }
+
+// endregion
