@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	romBankSize          = 0x4000
 	titleAddr            = 0x134
 	oldTitleSize         = 16
 	manufacturerCodeAddr = 0x13F
@@ -27,6 +26,11 @@ const (
 	romVerAddr           = 0x1
 	headerChecksumAddr   = 0x14D
 	globalChecksumAddr   = 0x14E
+	romBankSize          = 0x4000
+	bank0MinAddr         = 0x0000
+	bank0MaxAddr         = 0x3FFF
+	bank1MinAddr         = 0x4000
+	bank1MaxAddr         = 0x7FFF
 )
 
 type (
@@ -34,8 +38,8 @@ type (
 	CartType    uint8
 	DestCode    uint8
 	OldLicensee uint8
-	RomSize     uint8
-	RamSize     uint8
+	RomCode     uint8
+	RamCode     uint8
 )
 
 // Header Represents Cartridge Header
@@ -46,8 +50,8 @@ type Header struct {
 	NewLicensee      NewLicensee
 	SGBFlag          uint8
 	CartType         CartType
-	RomSize          RomSize
-	RamSize          RamSize
+	RomCode          RomCode
+	RamCode          RamCode
 	DestinationCode  DestCode
 	OldLicensee      OldLicensee
 	RomVersion       uint8
@@ -61,6 +65,7 @@ type Cartridge struct {
 	Rom    [][]uint8
 	Ram    []uint8
 	Header *Header
+	mbc    Device
 }
 
 const (
@@ -134,29 +139,35 @@ func (l OldLicensee) String() string {
 	return "Unknown"
 }
 
+// IsSupported determines if Rom Size header within supported values
+func (r RomCode) IsSupported() bool {
+	//
+	return r <= 8
+}
+
 // GetBankSize retrieve no. of banks of Rom Needed.
-func (r RomSize) GetBankSize() uint8 {
+func (r RomCode) GetBankSize() uint8 {
 
 	// Assume not supported in this case
 	if r > 8 {
-		log.Panicf("RomSize Header has unsupported value of %d", r)
+		log.Panicf("RomCode Header has unsupported value of %d", r)
 	}
 
 	return 2 << r
 }
 
-func (r RomSize) String() string {
+func (r RomCode) String() string {
 
 	return fmt.Sprintf("%d KB", 16*r.GetBankSize())
 }
 
 // IsSupported Determine if external Ram supported
-func (r RamSize) IsSupported() bool {
+func (r RamCode) IsSupported() bool {
 	return r <= 5
 }
 
 // GetBankSize retrieve no. of banks of Ram Needed. It assumes Ram is supported
-func (r RamSize) GetBankSize() uint8 {
+func (r RamCode) GetBankSize() uint8 {
 	switch r {
 	case 0:
 		return 0
@@ -174,7 +185,7 @@ func (r RamSize) GetBankSize() uint8 {
 	return 0
 }
 
-func (r RamSize) String() string {
+func (r RamCode) String() string {
 	if !r.IsSupported() {
 		return "N//a"
 	}
@@ -187,13 +198,13 @@ func (r RamSize) String() string {
 //						0x134 to 0x13E (11 chars) in CGB Mode.
 // Manufacturer Code	0x13F to0x142 in newer Cartridge. This area is part of title in older cartridges
 // CGB Flag				0x143
-// OldLicensee Code		0x144 - 0x145 as two ASCII chars
+// New Licensee Code	0x144 - 0x145 as two ASCII chars
 // SGB Flag				0x146
 // Cartridge CartType	0x147
-// ROM Size				0x148
-// RAM Size				0x149
+// ROM Size	Code		0x148
+// RAM Size	Code		0x149
 // Destination Code 	0x14A
-// Old OldLicensee Code 	0x14B
+// Old Licensee Code 	0x14B
 // Rom Version Number 	0x14C
 // Header Checksum		0x14D
 // Global Checksum		0x14E - 0x14F
@@ -212,8 +223,8 @@ func NewHeader(file []byte) (*Header, error) {
 	if !h.CartType.IsSupported() {
 		return nil, errors.New("cartridge Type Not supported")
 	}
-	h.RomSize = RomSize(file[romSizeAddr])
-	h.RamSize = RamSize(file[ramSizeAddr])
+	h.RomCode = RomCode(file[romSizeAddr])
+	h.RamCode = RamCode(file[ramSizeAddr])
 	h.DestinationCode = DestCode(file[destCodeAddr])
 	h.RomVersion = file[romVerAddr]
 	h.HeaderChecksum = file[headerChecksumAddr]
@@ -222,60 +233,63 @@ func NewHeader(file []byte) (*Header, error) {
 	return h, nil
 }
 
-// GetRomSize Retrieve Size in KB
-func (h *Header) GetRomSize() uint16 {
-	return romBankSize / 0x400 * (2 << h.RomSize)
-}
-
 func (h Header) String() string {
 	return fmt.Sprintf("Cartridge {Title: %s, ManufacturerCode: %s, CGBFlag: %d, NewLicense: %s, SGBFlag: %d, "+
-		"CartType: %s, RomSize: %d KB, RamSize: %s, DestinationCode: %s, OldLicensee: %s, RomVersion: $%.2X, "+
+		"CartType: %s, RomCode: %s, RamCode: %s, DestinationCode: %s, OldLicensee: %s, RomVersion: $%.2X, "+
 		"HeaderCheckSum: $%.2X, GlobalChecksum: $%.4X}", h.Title, h.ManufacturerCode, h.CGBFlag, h.NewLicensee,
-		h.SGBFlag, h.CartType, h.GetRomSize(), h.RamSize, h.DestinationCode, h.OldLicensee, h.RomVersion, h.HeaderChecksum,
+		h.SGBFlag, h.CartType, h.RomCode, h.RamCode, h.DestinationCode, h.OldLicensee, h.RomVersion, h.HeaderChecksum,
 		h.GlobalChecksum)
 }
 
-// OpenRom Reads a ROM file, extract header information and set MBC accordingly
-func (c *Cartridge) OpenRom(path string) error {
-	var err error
-	c.file, err = os.ReadFile(path)
+// NewCartridge Reads a ROM file, extract header information and return Cartridge with appropriate MBC accordingly
+// returns error if rom file corrupted or not supported
+func NewCartridge(path string) (*Cartridge, error) {
+	file, err := os.ReadFile(path)
 
 	if err != nil {
-		return errors.Wrap(err, "cartridge could not be opened")
+		return nil, errors.Wrap(err, "cartridge could not be opened")
 	}
 
-	c.Header, err = NewHeader(c.file)
+	header, err := NewHeader(file)
 	if err != nil {
-		return errors.Wrap(err, "cartridge header is corrupted or unsupported")
+		return nil, errors.Wrap(err, "cartridge header is corrupted or unsupported")
+	}
+	cart := new(Cartridge)
+	cart.file = file
+	cart.Header = header
+
+	switch header.CartType {
+	case CartTypeRomOnly:
+		err = newMbc0(cart)
+	default:
+		return nil, errors.New("cartridge mbc not supported")
 	}
 
-	c.Rom = make([][]byte, c.Header.RomSize.GetBankSize())
-	for i := 0; i < int(c.Header.RomSize.GetBankSize()); i++ {
-		c.Rom[i] = make([]byte, romBankSize)
-		copy(c.Rom[i], c.file[romBankSize*i:romBankSize*i+1])
-	}
-
-	return nil
+	return cart, err
 }
 
 func (c *Cartridge) Read(address uint16) uint8 {
-	// TODO implement Cartridge external Ram
-	if address > MaxRomAddr {
-		log.WithField("Address", address).Warn("Cartridge RAM not Supported")
-		return 0
-	}
+	//// TODO implement Cartridge external Ram
+	//if address > MaxRomAddr {
+	//	log.WithField("Address", address).Warn("Cartridge RAM not Supported")
+	//	return 0
+	//}
+	//
+	//// TODO make mbc handle Rom Banks
+	//return c.Rom[0][address]
 
-	// TODO make mbc handle Rom Banks
-	return c.Rom[0][address]
+	return c.mbc.Read(address)
 }
 
 func (c Cartridge) Write(address uint16, value uint8) {
-	// TODO implement Cartridge external Ram
-	if address > MaxRomAddr {
-		log.WithField("Address", address).Warn("Cartridge RAM not Supported")
-	} else {
-		log.WithField("Address", address).Warn("Writing to ROM")
-	}
+	//// TODO implement Cartridge external Ram
+	//if address > MaxRomAddr {
+	//	log.WithField("Address", address).Warn("Cartridge RAM not Supported")
+	//} else {
+	//	log.WithField("Address", address).Warn("Writing to ROM")
+	//}
+
+	c.mbc.Write(address, value)
 }
 
 // AsciiToStr Convert Byte Slice to String
