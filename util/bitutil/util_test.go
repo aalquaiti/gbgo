@@ -1,4 +1,4 @@
-package bit
+package bitutil
 
 import (
 	"testing"

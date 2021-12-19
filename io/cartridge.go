@@ -3,11 +3,11 @@ package io
 import "C"
 import (
 	"fmt"
-	"github.com/aalquaiti/gbgo/bit"
+	"github.com/aalquaiti/gbgo/util/bitutil"
+	"github.com/aalquaiti/gbgo/util/stringutil"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"strings"
 )
 
 const (
@@ -26,11 +26,6 @@ const (
 	romVerAddr           = 0x1
 	headerChecksumAddr   = 0x14D
 	globalChecksumAddr   = 0x14E
-	romBankSize          = 0x4000
-	bank0MinAddr         = 0x0000
-	bank0MaxAddr         = 0x3FFF
-	bank1MinAddr         = 0x4000
-	bank1MaxAddr         = 0x7FFF
 )
 
 type (
@@ -92,6 +87,12 @@ var (
 		0x30: "infogrames", 0x31: "nintendo", 0x32: "bandai", 0x33: "OTHER", 0x34: "konami", 0x35: "hector",
 		0x38: "capcom", 0x39: "banpresto",
 	}
+	mbcFunc = map[CartType]func(*Cartridge) (Device, error){
+		CartTypeRomOnly:    newMbc0,
+		CartTypeMBC1:       newMbc1,
+		CartTypeMBC1Ram:    newMbc1,
+		CartTypeMBC1RamBat: newMbc1,
+	}
 )
 
 func (n NewLicensee) String() string {
@@ -141,7 +142,8 @@ func (l OldLicensee) String() string {
 
 // IsSupported determines if Rom Size header within supported values
 func (r RomCode) IsSupported() bool {
-	//
+	// Currently only up to code $08 is supported
+	// TODO: Optional: Look into supporting Codes $52, $53 and $54
 	return r <= 8
 }
 
@@ -214,10 +216,10 @@ func NewHeader(file []byte) (*Header, error) {
 
 	// TODO implement how CGB handles titles
 	// https://gbdev.io/pandocs/The_Cartridge_Header.html
-	h.Title = AsciiToStr(file[titleAddr:], oldTitleSize)
-	h.ManufacturerCode = AsciiToStr(file[manufacturerCodeAddr:], manufacturerCodeSize)
+	h.Title = stringutil.AsciiToStr(file[titleAddr:], oldTitleSize)
+	h.ManufacturerCode = stringutil.AsciiToStr(file[manufacturerCodeAddr:], manufacturerCodeSize)
 	h.CGBFlag = file[cgbFlagAddr]
-	h.NewLicensee = NewLicensee(AsciiToStr(file[newLicenseeAddr:], newLicenseeSize))
+	h.NewLicensee = NewLicensee(stringutil.AsciiToStr(file[newLicenseeAddr:], newLicenseeSize))
 	h.SGBFlag = file[sgbFlagAddr]
 	h.CartType = CartType(file[cartTypeAddr])
 	if !h.CartType.IsSupported() {
@@ -228,7 +230,7 @@ func NewHeader(file []byte) (*Header, error) {
 	h.DestinationCode = DestCode(file[destCodeAddr])
 	h.RomVersion = file[romVerAddr]
 	h.HeaderChecksum = file[headerChecksumAddr]
-	h.GlobalChecksum = bit.To16(file[globalChecksumAddr+1], file[globalChecksumAddr])
+	h.GlobalChecksum = bitutil.To16(file[globalChecksumAddr+1], file[globalChecksumAddr])
 
 	return h, nil
 }
@@ -258,47 +260,30 @@ func NewCartridge(path string) (*Cartridge, error) {
 	cart.file = file
 	cart.Header = header
 
-	switch header.CartType {
-	case CartTypeRomOnly:
-		err = newMbc0(cart)
-	default:
-		return nil, errors.New("cartridge mbc not supported")
+	if mbc, ok := mbcFunc[header.CartType]; !ok {
+		return nil, errors.New("Cartridge mbc not supported")
+	} else {
+		cart.mbc, err = mbc(cart)
 	}
+
+	//switch header.CartType {
+	//case CartTypeRomOnly:
+	//	cart.mbc, err = newMbc0(cart)
+	//default:
+	//	return nil, errors.New("cartridge mbc not supported")
+	//}
 
 	return cart, err
 }
 
 func (c *Cartridge) Read(address uint16) uint8 {
-	//// TODO implement Cartridge external Ram
-	//if address > MaxRomAddr {
-	//	log.WithField("Address", address).Warn("Cartridge RAM not Supported")
-	//	return 0
-	//}
-	//
-	//// TODO make mbc handle Rom Banks
-	//return c.Rom[0][address]
-
 	return c.mbc.Read(address)
 }
 
-func (c Cartridge) Write(address uint16, value uint8) {
-	//// TODO implement Cartridge external Ram
-	//if address > MaxRomAddr {
-	//	log.WithField("Address", address).Warn("Cartridge RAM not Supported")
-	//} else {
-	//	log.WithField("Address", address).Warn("Writing to ROM")
-	//}
-
+func (c *Cartridge) Write(address uint16, value uint8) {
 	c.mbc.Write(address, value)
 }
 
-// AsciiToStr Convert Byte Slice to String
-func AsciiToStr(src []byte, length int) string {
-	sb := strings.Builder{}
-	str := make([]byte, length)
-	copy(str, src)
-
-	sb.Write(str)
-
-	return sb.String()
+func (c *Cartridge) Reset() {
+	c.mbc.Reset()
 }

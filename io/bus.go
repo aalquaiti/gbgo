@@ -9,6 +9,7 @@ import (
 type Device interface {
 	Read(uint16) uint8
 	Write(uint16, uint8)
+	Reset()
 }
 
 const (
@@ -39,7 +40,7 @@ func NewBus(rom Device) Bus {
 	return Bus{Rom: rom}
 }
 
-// Read Returns an 8-bit value from associated device connected to bus
+// Read Returns an 8-bitutil value from associated device connected to bus
 // 0x0000 to 0x7FFF		ROM (Handled by Cartridge)
 // 0x8000 to 0x9FFF		Vram
 // 0xA000 to 0xBFFF		External RAM (Handled by Cartridge)
@@ -95,21 +96,21 @@ func (b *Bus) Read(address uint16) uint8 {
 	}
 }
 
-// Read16As8 returns an 8-bit tuple from memory as address and address + 1
+// Read16As8 returns an 8-bitutil tuple from memory as address and address + 1
 // The first return byte is the least significant byte (low)
 // the second return byte is the most significant byte (high)
 func (b *Bus) Read16As8(address uint16) (uint8, uint8) {
 	return b.Read(address), b.Read(address + 1)
 }
 
-// Read16 returns an 16-bit value from associated device connected to bus
+// Read16 returns an 16-bitutil value from associated device connected to bus
 func (b *Bus) Read16(pos uint16) uint16 {
 	low, high := b.Read16As8(pos)
 
 	return uint16(high)<<8 + uint16(low)
 }
 
-// Write an 8-bit value to associated device connected to bus
+// Write an 8-bitutil value to associated device connected to bus
 // 0x0000 to 0x7FFF		ROM (Handled by Cartridge)
 // 0x8000 to 0x9FFF		VRAM
 // 0xA000 to 0xBFFF		External RAM (Handled by Cartridge)
@@ -174,7 +175,7 @@ func (b *Bus) Write(address uint16, value uint8) {
 	}
 }
 
-// Write16 writes a 16-bit value to associated device connected to bus
+// Write16 writes a 16-bitutil value to associated device connected to bus
 func (b *Bus) Write16(address uint16, value uint16) {
 	b.Write(address, uint8(value))
 	b.Write(address+1, uint8(value>>8))
@@ -336,7 +337,7 @@ func (b *Bus) IncDIV() {
 	b.IO[DivAddr&0xFF]++
 }
 
-// IsTacTimerEnabled determines Timer Control (TAC) bit 2 to determine if Timer is Enabled. When enabled, Timer Counter
+// IsTacTimerEnabled determines Timer Control (TAC) bitutil 2 to determine if Timer is Enabled. When enabled, Timer Counter
 // can be incremented. This does not affect Divider Register
 func (b *Bus) IsTacTimerEnabled() bool {
 	return b.IO[TacAddr&0xFF]&0b100 == 0b100

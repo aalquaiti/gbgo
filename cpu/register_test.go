@@ -16,7 +16,7 @@ func TestRegFSet(t *testing.T) {
 }
 
 func TestRegFGet(t *testing.T) {
-	// Regisger F is not supposed to be set directly, to ensure bit 0-3
+	// Regisger F is not supposed to be set directly, to ensure bitutil 0-3
 	// are always set to Zero
 	flags.value = 0b10111001
 

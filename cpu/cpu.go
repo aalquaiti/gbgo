@@ -2,7 +2,7 @@ package cpu
 
 import (
 	"fmt"
-	bit2 "github.com/aalquaiti/gbgo/bit"
+	bit2 "github.com/aalquaiti/gbgo/util/bitutil"
 
 	"github.com/aalquaiti/gbgo/io"
 )

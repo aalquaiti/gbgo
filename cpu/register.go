@@ -2,12 +2,12 @@ package cpu
 
 import (
 	"fmt"
-	bit2 "github.com/aalquaiti/gbgo/bit"
+	bit2 "github.com/aalquaiti/gbgo/util/bitutil"
 
 	"github.com/golang/glog"
 )
 
-// Reg8 represents an 8-bit Register
+// Reg8 represents an 8-bitutil Register
 type Reg8 interface {
 	fmt.Stringer
 	Val() *uint8 // Pointer to the variable holding the value
@@ -18,7 +18,7 @@ type Reg8 interface {
 	Dec() Reg8
 }
 
-// Reg16 represents a 16-bit Register
+// Reg16 represents a 16-bitutil Register
 type Reg16 interface {
 	fmt.Stringer
 	Name() string
@@ -40,7 +40,7 @@ type Register struct {
 func NewRegister() Register {
 	reg := Register{E: &reg8Impl{}}
 
-	// 8-bit Registers
+	// 8-bitutil Registers
 	reg.A = &reg8Impl{name: "A"}
 	reg.F = &RegF{}
 	reg.B = &reg8Impl{name: "B"}
@@ -50,20 +50,20 @@ func NewRegister() Register {
 	reg.H = &reg8Impl{name: "H"}
 	reg.L = &reg8Impl{name: "L"}
 
-	// 16-bit Registers consisting of two 8-bits
+	// 16-bitutil Registers consisting of two 8-bits
 	reg.AF = &reg16From8Impl{high: reg.A, low: reg.F}
 	reg.BC = &reg16From8Impl{high: reg.B, low: reg.C}
 	reg.DE = &reg16From8Impl{high: reg.D, low: reg.E}
 	reg.HL = &reg16From8Impl{high: reg.H, low: reg.L}
 
-	// 16-bit Registers
+	// 16-bitutil Registers
 	reg.SP = &reg16Impl{name: "SP"}
 	reg.PC = &reg16Impl{name: "PC"}
 
 	return reg
 }
 
-// reg8Impl implements Reg8 interface that represents an 8-bit register
+// reg8Impl implements Reg8 interface that represents an 8-bitutil register
 type reg8Impl struct {
 	value uint8
 	name  string
@@ -105,7 +105,7 @@ func (r *reg8Impl) String() string {
 	return fmt.Sprintf("%s=%.2X", r.name, r.value)
 }
 
-// reg16From8Impl implements Reg16 interface that represents a 16-bit register
+// reg16From8Impl implements Reg16 interface that represents a 16-bitutil register
 type reg16Impl struct {
 	value uint16
 	name  string
@@ -142,7 +142,7 @@ func (r *reg16Impl) String() string {
 	return fmt.Sprintf("%s=%.4X", r.name, r.value)
 }
 
-// reg16From8Impl implements Reg16 interface that represents two 8-bit register
+// reg16From8Impl implements Reg16 interface that represents two 8-bitutil register
 type reg16From8Impl struct {
 	high Reg8
 	low  Reg8
@@ -275,7 +275,7 @@ func (r *RegF) SetFlagC(value bool) {
 // Affects Flags Z and H according to current and new value
 func (r *RegF) AffectFlagZH(curVal, newVal uint8) {
 	r.SetFlagZ(newVal == 0)
-	// when bit 3 overflow
+	// when bitutil 3 overflow
 	halfCarry := (curVal&0b1111 == 0b1111) && (newVal&0b1111 == 0)
 	r.SetFlagH(halfCarry)
 }
@@ -288,8 +288,8 @@ func (r *RegF) AffectFlagHC(curVal, newVal uint8) {
 	r.SetFlagC(carry)
 }
 
-// Affects Flags H and C according to 16 bit current and new value
-// H is affected by overflow in bit 11, C is affected by overflow in bit 15
+// Affects Flags H and C according to 16 bitutil current and new value
+// H is affected by overflow in bitutil 11, C is affected by overflow in bitutil 15
 func (r *RegF) AffectFlagHC16(curVal, newVal uint16) {
 	r.AffectFlagHC(uint8(curVal>>8), uint8(newVal>>8))
 }
@@ -297,7 +297,7 @@ func (r *RegF) AffectFlagHC16(curVal, newVal uint16) {
 // Affects Flags Z, H and C according to current and new value
 func (r *RegF) AffectFlagZHC(curVal, newVal uint8) {
 	r.SetFlagZ(newVal == 0)
-	// when bit 3 overflow
+	// when bitutil 3 overflow
 	halfCarry := (curVal&0b1111 == 0b1111) && (newVal&0b1111 == 0)
 	r.SetFlagH(halfCarry)
 	carry := (curVal&0b11110000 == 0b11110000) && (newVal&0b11110000 == 0)

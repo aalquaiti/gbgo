@@ -2,7 +2,7 @@ package cpu
 
 import (
 	"fmt"
-	bit2 "github.com/aalquaiti/gbgo/bit"
+	bit2 "github.com/aalquaiti/gbgo/util/bitutil"
 )
 
 // Instruction defines a CPU instruction
@@ -1167,7 +1167,7 @@ func ldb() string {
 // C <- [7~0] <- [7]
 func rlca() string {
 	var bit7 bool = Reg.A.Get()&0x80 == 0x80
-	// If bit 7 is 1
+	// If bitutil 7 is 1
 	*Reg.A.Val() <<= 1
 	if bit7 {
 		*Reg.A.Val() |= 1
@@ -4002,7 +4002,7 @@ func addhlReg(high, low uint8) {
 	addhlReg16(bit2.To16(high, low))
 }
 
-// Add a 16-bit value to register HL
+// Add a 16-bitutil value to register HL
 // Affects Flag H and C. Set Flag N to Zero
 func addhlReg16(value uint16) {
 	curHL := Reg.HL.Get()
@@ -4031,7 +4031,7 @@ func jrCond(condition bool, addTicks uint8) uint8 {
 
 // Jumps to position according to condition. Additional ticks will be added
 // if condition met
-// Returns 16-bit read after the jump instruction
+// Returns 16-bitutil read after the jump instruction
 func jpCond(condition bool, addTicks uint8) uint16 {
 	value := bus.Read16(Reg.PC.Get())
 	Reg.PC.Inc().Inc()
@@ -4168,7 +4168,7 @@ func push16(high, low uint8) {
 
 // Calls a subroutine according to condition. Additional ticks will be added
 // if condition met
-// Returns 16-bit read after the call instruction
+// Returns 16-bitutil read after the call instruction
 func callCond(condition bool, addTicks uint8) uint16 {
 	value := bus.Read16(Reg.PC.Get())
 	Reg.PC.Inc().Inc()
@@ -4201,13 +4201,13 @@ func rlcReg(r8 *uint8) {
 	*r8 = rlcVal(*r8)
 }
 
-// Rotate Left Circular an 8-bit value
+// Rotate Left Circular an 8-bitutil value
 // Bit 7 shifts to bit 0
 // Bit 7 affect the carry Flag
 // C <- [7~0] <- [7]
 func rlcVal(value uint8) uint8 {
 	var bit7 bool = value&0x80 == 0x80
-	// If bit 7 is 1
+	// If bitutil 7 is 1
 	value <<= 1
 	if bit7 {
 		value |= 1
@@ -4227,7 +4227,7 @@ func rrcReg(r8 *uint8) {
 	*r8 = rrcVal(*r8)
 }
 
-// Rotate Right Circular an 8-bit value
+// Rotate Right Circular an 8-bitutil value
 // Bit 0 shifts to Carry
 // [0] -> [7~0] -> C
 func rrcVal(value uint8) uint8 {
@@ -4252,7 +4252,7 @@ func rlReg(r8 *uint8) {
 	*r8 = rl(*r8)
 }
 
-// Rotate an 8-bit value left through Carry
+// Rotate an 8-bitutil value left through Carry
 // Previous Carry shifts to bit 0
 // Bit 7 shift to Carry
 // C <- [7~0] <- C
@@ -4275,7 +4275,7 @@ func rrReg(r8 *uint8) {
 	*r8 = rr(*r8)
 }
 
-// Rotate an 8-bit value right through Carry
+// Rotate an 8-bitutil value right through Carry
 // Previous Carry value shifts to bit 7
 // Bit 0 shifts to Carry
 // C -> [7~0] -> C
@@ -4297,7 +4297,7 @@ func slaReg(r8 *uint8) {
 	*r8 = sla(*r8)
 }
 
-// Shift Left Arithmetic an 8-bit value
+// Shift Left Arithmetic an 8-bitutil value
 // Bit 7 shift to Carry
 // C <- [7~0]
 func sla(value uint8) uint8 {
@@ -4319,7 +4319,7 @@ func sraReg(r8 *uint8) {
 	*r8 = sra(*r8)
 }
 
-// Shift Right Arithmetic an 8-bit value
+// Shift Right Arithmetic an 8-bitutil value
 // Bit 0 shifts to Carry
 // Bit 7 value doesn't change
 //  [7]-> [7~0] -> C
@@ -4340,7 +4340,7 @@ func swapReg(r8 *uint8) {
 	*r8 = swap(*r8)
 }
 
-// Swap upper four bits with lower four bits for an 8-bit value
+// Swap upper four bits with lower four bits for an 8-bitutil value
 // [7654] <- [3~0] || [7~5] -> [3210]
 func swap(value uint8) uint8 {
 	return value<<4 | value>>4
@@ -4353,7 +4353,7 @@ func srlReg(r8 *uint8) {
 	*r8 = srl(*r8)
 }
 
-// Shift Right Logic an 8-bit value
+// Shift Right Logic an 8-bitutil value
 // Bit 0 shifts to Carry
 // [7~0] -> C
 func srl(value uint8) uint8 {
@@ -4389,7 +4389,7 @@ func bitNumHL(pos uint8) string {
 	return fmt.Sprintf("BIT %d, (HL)", pos)
 }
 
-// Checks whether bit at given position of an 8-bit value is
+// Checks whether bit at given position of an 8-bitutil value is
 // set or not.
 // Set Flag Z to One if bit was not set
 // Set Flag N to Zero
@@ -4425,7 +4425,7 @@ func resNumHL(pos uint8) string {
 	return fmt.Sprintf("RES %d, (HL)", pos)
 }
 
-// Set a bit to zero at given position of an 8-bit value
+// Set a bit to zero at given position of an 8-bitutil value
 func res(pos uint8, value uint8) uint8 {
 	var mask uint8 = 0x01 << pos
 	mask = ^mask
@@ -4456,7 +4456,7 @@ func setNumHL(pos uint8) string {
 	return fmt.Sprintf("RES %d, (HL)", pos)
 }
 
-// Set a bit to zero at given position of an 8-bit value
+// Set a bit to zero at given position of an 8-bitutil value
 func set(pos uint8, value uint8) uint8 {
 	var mask uint8 = 0x01 << pos
 
