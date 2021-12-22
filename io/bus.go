@@ -2,6 +2,7 @@ package io
 
 import (
 	"fmt"
+	"github.com/aalquaiti/gbgo/util/bitutil"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,8 +15,8 @@ type Device interface {
 
 const (
 	MaxRomAddr = 0xFFF
-	VramSize   = 0x2000
-	WramSize   = 0x2000
+	VRamSize   = 0x2000
+	WRamSize   = 0x2000
 	OamSize    = 0xA0
 	IoSize     = 0x80
 	HRamSize   = 0x7F
@@ -27,8 +28,8 @@ const (
 
 type Bus struct {
 	Rom  Device
-	VRam [VramSize]uint8 // Video RAM
-	WRam [WramSize]uint8 // Work RAM
+	VRam [VRamSize]uint8 // Video RAM
+	WRam [WRamSize]uint8 // Work RAM
 	Oam  [OamSize]uint8  // Object Attribute Memory
 	IO   [IoSize]uint8   // IO Registers
 	HRam [HRamSize]uint8 // High RAM
@@ -309,24 +310,16 @@ func (b *Bus) IrqSerial() bool {
 }
 
 func (b *Bus) SetIrqSerial(enable bool) {
-	if enable {
-		b.IO[0x0F] |= 0b00001000
-	} else {
-		b.IO[0x0F] &= 0b11110111
-	}
+	b.IO[0x0F] = bitutil.Set(b.IO[0x0F], 3, enable)
 }
 
-// IrqJoypad determines if Joypad Interrupt is Requested
-func (b *Bus) IrqJoypad() bool {
+// IrqJoyPad determines if JoyPad Interrupt is Requested
+func (b *Bus) IrqJoyPad() bool {
 	return b.IO[0x0F]&0x10 == 0x10
 }
 
 func (b *Bus) SetIrqJoypad(enable bool) {
-	if enable {
-		b.IO[0x0F] |= 0b00010000
-	} else {
-		b.IO[0x0F] &= 0b11101111
-	}
+	b.IO[0x0F] = bitutil.Set(b.IO[0x0F], 4, enable)
 }
 
 // IncDIV Increment Divider Register by one.

@@ -1122,8 +1122,6 @@ func ldbc16() string {
 	Reg.PC.Inc().Inc()
 	Reg.BC.Set(value)
 
-	fmt.Println()
-
 	return fmt.Sprintf("LD BC, $%.4X", value)
 }
 

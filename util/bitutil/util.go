@@ -13,3 +13,22 @@ func From16(value uint16) (uint8, uint8) {
 	low := uint8(value)
 	return high, low
 }
+
+// Set the value of bit at position to true (1) or false (0)
+func Set(value, position uint8, set bool) uint8 {
+	// TODO: Optimise by using a pre-calculated array
+	var mask uint8 = 1 << position
+
+	if set {
+		return value | mask
+	}
+
+	return value & ^mask
+}
+
+// IsSet determines if bit at position is true (1) or false (0)
+func IsSet(value, position uint8) bool {
+	var mask uint8 = 1 << position
+
+	return value&mask == mask
+}

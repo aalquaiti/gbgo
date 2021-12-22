@@ -206,7 +206,7 @@ func irq() {
 	} else if bus.IsSerialInt() && bus.IrqSerial() {
 		bus.SetIrqSerial(false)
 		Reg.PC.Set(0x58)
-	} else if bus.IsJoypadInt() && bus.IrqJoypad() {
+	} else if bus.IsJoypadInt() && bus.IrqJoyPad() {
 		bus.SetIrqJoypad(false)
 		Reg.PC.Set(0x60)
 	}
