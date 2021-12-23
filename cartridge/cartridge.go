@@ -75,8 +75,8 @@ const (
 
 var (
 	newLicenseeMap = map[NewLicensee]string{
-		"00": "None", "01": "Nintendo R&D1", "08": "Capcom", "12": "Electronic Arts", "18": "Hudson Soft", "19": "b-ai",
-		"20": "kss",
+		"00": "None", "01": "Nintendo R&D1", "08": "Capcom", "12": "Electronic Arts", "18": "Hudson Soft",
+		"19": "b-ai", "20": "kss",
 	}
 	cartTypeMap = map[CartType]string{
 		00: "ROM ONLY", 01: "MBC1", 02: "MBC1+RAM", 03: "MBC1+RAM+BATTERY",
@@ -94,6 +94,12 @@ var (
 		CartTypeMBC1Ram:    newMbc1,
 		CartTypeMBC1RamBat: newMbc1,
 	}
+)
+
+// errors
+var (
+	ErrorType = errors.New("cartridge: type not supported")
+	ErrorMbc  = errors.New("cartridge: mbc not supported")
 )
 
 func (n NewLicensee) String() string {
@@ -224,7 +230,7 @@ func NewHeader(file []byte) (*Header, error) {
 	h.SGBFlag = file[sgbFlagAddr]
 	h.CartType = CartType(file[cartTypeAddr])
 	if !h.CartType.IsSupported() {
-		return nil, errors.New("cartridge Type Not supported")
+		return nil, ErrorType
 	}
 	h.RomCode = RomCode(file[romSizeAddr])
 	h.RamCode = RamCode(file[ramSizeAddr])
@@ -250,29 +256,22 @@ func NewCartridge(path string) (*Cartridge, error) {
 	file, err := os.ReadFile(path)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "cartridge could not be opened")
+		return nil, errors.Wrap(err, "cartridge: could not be opened")
 	}
 
 	header, err := NewHeader(file)
 	if err != nil {
-		return nil, errors.Wrap(err, "cartridge header is corrupted or unsupported")
+		return nil, errors.Wrap(err, "cartridge: header is corrupted or unsupported")
 	}
 	cart := new(Cartridge)
 	cart.file = file
 	cart.Header = header
 
 	if mbc, ok := mbcFunc[header.CartType]; !ok {
-		return nil, errors.New("Cartridge mbc not supported")
+		return nil, ErrorMbc
 	} else {
 		cart.mbc, err = mbc(cart)
 	}
-
-	//switch header.CartType {
-	//case CartTypeRomOnly:
-	//	cart.mbc, err = newMbc0(cart)
-	//default:
-	//	return nil, errors.New("cartridge mbc not supported")
-	//}
 
 	return cart, err
 }

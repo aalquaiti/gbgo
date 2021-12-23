@@ -185,16 +185,6 @@ func (b *Bus) Write16(address uint16, value uint16) {
 
 // region HelperFunctions
 
-//// ReadIE returns the value of Interrupt Enable Register at address 0xFFFF
-//func (b *Bus) ReadIE() uint8 {
-//	return b.IE
-//}
-//
-//// ReadIF returns the value of Interrupt Flag at address OxFF0F
-//func (b *Bus) ReadIF() uint8 {
-//	return b.IO[0x0F]
-//}
-
 // InterruptPending checks if an interrupt is pending, by ANDing the value of Interrupt Enable Register (IE) with the
 // value of Interrupt Flag (IF)
 func (b *Bus) InterruptPending() bool {
@@ -287,7 +277,7 @@ func (b *Bus) IrqJoyPad() bool {
 	return bitutil.IsSet(b.IO[0x0F], 4)
 }
 
-func (b *Bus) SetIrqJoypad(enable bool) {
+func (b *Bus) SetIrqJoyPad(enable bool) {
 	b.IO[0x0F] = bitutil.Set(b.IO[0x0F], 4, enable)
 }
 

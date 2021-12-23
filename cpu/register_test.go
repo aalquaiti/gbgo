@@ -18,7 +18,7 @@ func TestRegFSet(t *testing.T) {
 func TestRegFGet(t *testing.T) {
 	// Regisger F is not supposed to be set directly, to ensure bitutil 0-3
 	// are always set to Zero
-	flags.value = 0b10111001
+	flags.Set(0b10111001)
 
 	var expected uint8 = 0b10110000
 	var actual uint8 = flags.Get()
@@ -30,7 +30,7 @@ func TestRegFGet(t *testing.T) {
 }
 
 func TestRegFGetFlagZ(t *testing.T) {
-	flags.value = 0b11111111
+	flags.Set(0b11111111)
 
 	var expected bool = true
 	var actual bool = flags.GetFlagZ()
@@ -64,7 +64,7 @@ func TestRegFSetFlagZ(t *testing.T) {
 }
 
 func TestRegFGetFlagN(t *testing.T) {
-	flags.value = 0b11111111
+	flags.Set(0b11111111)
 
 	var expected bool = true
 	var actual bool = flags.GetFlagN()
@@ -98,7 +98,7 @@ func TestRegFSetFlagN(t *testing.T) {
 }
 
 func TestRegFGetFlagH(t *testing.T) {
-	flags.value = 0b11111111
+	flags.Set(0b11111111)
 
 	var expected bool = true
 	var actual bool = flags.GetFlagN()
@@ -132,7 +132,7 @@ func TestRegFSetFlagH(t *testing.T) {
 }
 
 func TestRegFGetFlagC(t *testing.T) {
-	flags.value = 0b11111111
+	flags.Set(0b11111111)
 
 	var expected bool = true
 	var actual bool = flags.GetFlagN()
