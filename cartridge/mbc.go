@@ -1,7 +1,10 @@
-package io
+package cartridge
 
 import "C"
-import "github.com/pkg/errors"
+import (
+	"github.com/aalquaiti/gbgo/io"
+	"github.com/pkg/errors"
+)
 
 const (
 	romBankSize         = 0x4000
@@ -62,7 +65,7 @@ func (m *Mbc0) Reset() {
 
 }
 
-func newMbc0(c *Cartridge) (Device, error) {
+func newMbc0(c *Cartridge) (io.Device, error) {
 	mbc := &Mbc0{Header: c.Header}
 
 	if err := mbc.validate(); err != nil {
@@ -102,9 +105,9 @@ func (m *Mbc1) Read(address uint16) uint8 {
 	// Bank One and Up
 	case address <= bank1MaxAddr:
 		address &= romBankMaxAddr
-		// ROM Bank $00 must be accessed from Rom[0], so selecting it leads to increment to 1.
-		// This is so the selected Rom Bank cannot be Rom[0].
-		// Setting Bank Mode to $1 allows Rom[0] to remap the area of the bank zero ($0000 to $3FFF), which
+		// ROM Bank $00 must be accessed from Cartridge[0], so selecting it leads to increment to 1.
+		// This is so the selected Cartridge Bank cannot be Cartridge[0].
+		// Setting Bank Mode to $1 allows Cartridge[0] to remap the area of the bank zero ($0000 to $3FFF), which
 		// allows access to banks in large ROM, such as bank $20, $40 and $60
 		selected := m.GetSelectedRomBank()
 		if m.RomBank == 0 {
@@ -140,7 +143,7 @@ func (m *Mbc1) Write(address uint16, value uint8) {
 		// Reads the first five bits
 		value &= 0b11111
 		// If value written is higher than number of rom banks, it will be masked to required bits
-		// E.g: Rom Bank Size is of 256 KB (i.e. 32 rom banks) which needs four bits, and value written is higher,
+		// E.g: Cartridge Bank Size is of 256 KB (i.e. 32 rom banks) which needs four bits, and value written is higher,
 		// value will be masked to four bits
 		mask := m.Header.RomCode.GetBankSize() - 1
 		m.RomBank = value & mask
@@ -171,15 +174,15 @@ func (m *Mbc1) Write(address uint16, value uint8) {
 }
 
 func (m *Mbc1) GetSelectedRomBank() uint8 {
-	// Selected Rom comes from Rom Bank (for first five bits) and secondary rom bank (for more than 5 bits)
+	// Selected Cartridge comes from Cartridge Bank (for first five bits) and secondary rom bank (for more than 5 bits)
 	return m.SecondaryBank<<5 + m.RomBank
 }
 
 func (m *Mbc1) Reset() {
-	m.RomBank = 1 // Default Rom Bank
+	m.RomBank = 1 // Default Cartridge Bank
 }
 
-func newMbc1(c *Cartridge) (Device, error) {
+func newMbc1(c *Cartridge) (io.Device, error) {
 	mbc := &Mbc1{Mbc: Mbc{Header: c.Header}}
 
 	if err := mbc.validate(); err != nil {
@@ -203,7 +206,7 @@ func (m *Mbc1) validate() error {
 
 	// MBC0 has maximum of 2 MB ROM and 32 KB RAM
 
-	// Rom Code up to $6 support 2 MB of ROM
+	// Cartridge Code up to $6 support 2 MB of ROM
 	// Ram Code up to $3 support 32 KB of RAM
 	// TODO: Turn RomCode and RamCode to enum equivalent for easier reading of code
 	// Use this as reference : https://gbdev.io/pandocs/The_Cartridge_Header.html#0148---rom-size

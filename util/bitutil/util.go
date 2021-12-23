@@ -26,7 +26,7 @@ func Set(value, position uint8, set bool) uint8 {
 	return value & ^mask
 }
 
-// IsSet determines if bit at position is true (1) or false (0)
+// IsSet determines if a bit at position is true (1) or false (0)
 func IsSet(value, position uint8) bool {
 	var mask uint8 = 1 << position
 

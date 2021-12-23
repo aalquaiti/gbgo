@@ -1,8 +1,9 @@
-package io
+package cartridge
 
 import "C"
 import (
 	"fmt"
+	"github.com/aalquaiti/gbgo/io"
 	"github.com/aalquaiti/gbgo/util/bitutil"
 	"github.com/aalquaiti/gbgo/util/stringutil"
 	"github.com/pkg/errors"
@@ -60,7 +61,7 @@ type Cartridge struct {
 	Rom    [][]uint8
 	Ram    []uint8
 	Header *Header
-	mbc    Device
+	mbc    io.Device
 }
 
 const (
@@ -87,7 +88,7 @@ var (
 		0x30: "infogrames", 0x31: "nintendo", 0x32: "bandai", 0x33: "OTHER", 0x34: "konami", 0x35: "hector",
 		0x38: "capcom", 0x39: "banpresto",
 	}
-	mbcFunc = map[CartType]func(*Cartridge) (Device, error){
+	mbcFunc = map[CartType]func(*Cartridge) (io.Device, error){
 		CartTypeRomOnly:    newMbc0,
 		CartTypeMBC1:       newMbc1,
 		CartTypeMBC1Ram:    newMbc1,
@@ -140,14 +141,14 @@ func (l OldLicensee) String() string {
 	return "Unknown"
 }
 
-// IsSupported determines if Rom Size header within supported values
+// IsSupported determines if Cartridge Size header within supported values
 func (r RomCode) IsSupported() bool {
 	// Currently only up to code $08 is supported
 	// TODO: Optional: Look into supporting Codes $52, $53 and $54
 	return r <= 8
 }
 
-// GetBankSize retrieve no. of banks of Rom Needed.
+// GetBankSize retrieve no. of banks of Cartridge Needed.
 func (r RomCode) GetBankSize() uint8 {
 
 	// Assume not supported in this case
@@ -207,7 +208,7 @@ func (r RamCode) String() string {
 // RAM Size	Code		0x149
 // Destination Code 	0x14A
 // Old Licensee Code 	0x14B
-// Rom Version Number 	0x14C
+// Cartridge Version Number 	0x14C
 // Header Checksum		0x14D
 // Global Checksum		0x14E - 0x14F
 // returns error if Header info are not supported, such as in the case of an unsupported MBC

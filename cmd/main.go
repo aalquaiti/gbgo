@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/aalquaiti/gbgo/cartridge"
 	"github.com/aalquaiti/gbgo/cpu"
 	"github.com/aalquaiti/gbgo/io"
 )
@@ -11,18 +12,17 @@ func main() {
 	file := "./roms/delme.gb"
 	//file := "./roms/tetris.gb"
 	// file := "./roms/DMG_ROM.bin"
-	cart, err := io.NewCartridge(file)
+	cart, err := cartridge.NewCartridge(file)
 	if err != nil {
 		panic(err)
 	}
-	bus := io.Bus{Rom: cart}
-	cpu.Init(cpu.DMG_MODE, bus)
+	cpu.Init(cpu.DMG_MODE, io.NewBus(cart))
 
 	//fmt.Println(cart.Header)
 
 	for i := 0; i < 100000; i++ {
 		cpu.Step()
-		//if bus.Read(0xFF02) == 0x81 {
+		//if io.Read(0xFF02) == 0x81 {
 		//	log.Fatal("Found it")
 		//}
 	}
@@ -33,7 +33,7 @@ func main() {
 
 	//for {
 	//	cpu.Step()
-	//	if bus.Read(0xFF02) == 0x81 {
+	//	if io.Read(0xFF02) == 0x81 {
 	//		log.Fatal("Found it")
 	//	}
 	//}

@@ -2,9 +2,8 @@ package cpu
 
 import (
 	"fmt"
-	bit2 "github.com/aalquaiti/gbgo/util/bitutil"
-
 	"github.com/aalquaiti/gbgo/io"
+	bit2 "github.com/aalquaiti/gbgo/util/bitutil"
 )
 
 const (
@@ -193,7 +192,7 @@ func irq() {
 		ticks += 5
 		push16(bit2.From16(Reg.PC.Get()))
 	}
-	if bus.IsVblank() && bus.IrqVblank() {
+	if bus.IsVBlank() && bus.IrqVBlank() {
 		bus.SetIrQVblank(false)
 
 		Reg.PC.Set(0x40)
