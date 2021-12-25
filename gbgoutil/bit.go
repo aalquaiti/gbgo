@@ -1,4 +1,4 @@
-package bitutil
+package gbgoutil
 
 // To16 Combine two 8-bit values to one 16-bit value
 func To16(rHigh, rLow uint8) uint16 {
@@ -14,8 +14,8 @@ func From16(value uint16) (uint8, uint8) {
 	return high, low
 }
 
-// Set the value of bit at position to true (1) or false (0)
-func Set(value, position uint8, set bool) uint8 {
+// SetBit the value of bit at position to true (1) or false (0)
+func SetBit(value, position uint8, set bool) uint8 {
 	// TODO: Optimise by using a pre-calculated array
 	var mask uint8 = 1 << position
 
@@ -26,8 +26,8 @@ func Set(value, position uint8, set bool) uint8 {
 	return value & ^mask
 }
 
-// IsSet determines if a bit at position is true (1) or false (0)
-func IsSet(value, position uint8) bool {
+// IsBitSet determines if a bit at position is true (1) or false (0)
+func IsBitSet(value, position uint8) bool {
 	var mask uint8 = 1 << position
 
 	return value&mask == mask

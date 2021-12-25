@@ -1,4 +1,4 @@
-package bitutil
+package gbgoutil
 
 import (
 	"testing"
@@ -37,14 +37,14 @@ func TestSetBit(t *testing.T) {
 	// Test that the fourth bit is set to 1
 	var value uint8 = 0b11101010
 	var expected uint8 = 0b11111010
-	var actual uint8 = Set(value, 4, true)
+	var actual uint8 = SetBit(value, 4, true)
 
 	assert.Equal(t, expected, actual)
 
 	// Test that the third bit is set to 0
 	value = 0b11101010
 	expected = 0b11100010
-	actual = Set(value, 3, false)
+	actual = SetBit(value, 3, false)
 
 	assert.Equal(t, expected, actual)
 }
@@ -64,8 +64,8 @@ func TestIsSet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, IsSet(tt.args.value, tt.args.position),
-				"IsSet(%v, %v)", tt.args.value, tt.args.position)
+			assert.Equalf(t, tt.want, IsBitSet(tt.args.value, tt.args.position),
+				"IsBitSet(%v, %v)", tt.args.value, tt.args.position)
 		})
 	}
 }
@@ -86,8 +86,8 @@ func TestSet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, Set(tt.args.value, tt.args.position, tt.args.set),
-				"Set(%v, %v, %v)", tt.args.value, tt.args.position, tt.args.set)
+			assert.Equalf(t, tt.want, SetBit(tt.args.value, tt.args.position, tt.args.set),
+				"SetBit(%v, %v, %v)", tt.args.value, tt.args.position, tt.args.set)
 		})
 	}
 }

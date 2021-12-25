@@ -2,7 +2,7 @@ package cpu
 
 import (
 	"fmt"
-	"github.com/aalquaiti/gbgo/util/bitutil"
+	"github.com/aalquaiti/gbgo/gbgoutil"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -154,11 +154,11 @@ func (r *reg16From8Impl) Name() string {
 }
 
 func (r *reg16From8Impl) Get() uint16 {
-	return bitutil.To16(r.high.Get(), r.low.Get())
+	return gbgoutil.To16(r.high.Get(), r.low.Get())
 }
 
 func (r *reg16From8Impl) Set(value uint16) Reg16 {
-	high, low := bitutil.From16(value)
+	high, low := gbgoutil.From16(value)
 	r.high.Set(high)
 	r.low.Set(low)
 
@@ -223,38 +223,38 @@ func (r RegF) String() string {
 }
 
 func (r *RegF) GetFlagZ() bool {
-	return bitutil.IsSet(uint8(*r), 7)
+	return gbgoutil.IsBitSet(uint8(*r), 7)
 	//return (r.value & 0b10000000) == 0b10000000
 }
 
 func (r *RegF) SetFlagZ(value bool) {
-	*r = RegF(bitutil.Set(uint8(*r), 7, value))
+	*r = RegF(gbgoutil.SetBit(uint8(*r), 7, value))
 }
 
 func (r *RegF) GetFlagN() bool {
-	return bitutil.IsSet(uint8(*r), 6)
+	return gbgoutil.IsBitSet(uint8(*r), 6)
 	//return (r.value & 0b01000000) == 0b01000000
 }
 
 func (r *RegF) SetFlagN(value bool) {
-	*r = RegF(bitutil.Set(uint8(*r), 6, value))
+	*r = RegF(gbgoutil.SetBit(uint8(*r), 6, value))
 }
 
 func (r *RegF) GetFlagH() bool {
-	return bitutil.IsSet(uint8(*r), 5)
+	return gbgoutil.IsBitSet(uint8(*r), 5)
 	//return (r.value & 0b00100000) == 0b00100000
 }
 
 func (r *RegF) SetFlagH(value bool) {
-	*r = RegF(bitutil.Set(uint8(*r), 5, value))
+	*r = RegF(gbgoutil.SetBit(uint8(*r), 5, value))
 }
 
 func (r *RegF) GetFlagC() bool {
-	return bitutil.IsSet(uint8(*r), 4)
+	return gbgoutil.IsBitSet(uint8(*r), 4)
 }
 
 func (r *RegF) SetFlagC(value bool) {
-	*r = RegF(bitutil.Set(uint8(*r), 4, value))
+	*r = RegF(gbgoutil.SetBit(uint8(*r), 4, value))
 }
 
 // AffectFlagZH changes Flags Z and H according to current and new value

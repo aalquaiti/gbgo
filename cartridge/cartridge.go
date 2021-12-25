@@ -3,12 +3,12 @@ package cartridge
 import "C"
 import (
 	"fmt"
+	"github.com/aalquaiti/gbgo/gbgoutil"
 	"github.com/aalquaiti/gbgo/io"
-	"github.com/aalquaiti/gbgo/util/bitutil"
-	"github.com/aalquaiti/gbgo/util/stringutil"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 const (
@@ -223,10 +223,10 @@ func NewHeader(file []byte) (*Header, error) {
 
 	// TODO implement how CGB handles titles
 	// https://gbdev.io/pandocs/The_Cartridge_Header.html
-	h.Title = stringutil.AsciiToStr(file[titleAddr:], oldTitleSize)
-	h.ManufacturerCode = stringutil.AsciiToStr(file[manufacturerCodeAddr:], manufacturerCodeSize)
+	h.Title = asciiToStr(file[titleAddr:], oldTitleSize)
+	h.ManufacturerCode = asciiToStr(file[manufacturerCodeAddr:], manufacturerCodeSize)
 	h.CGBFlag = file[cgbFlagAddr]
-	h.NewLicensee = NewLicensee(stringutil.AsciiToStr(file[newLicenseeAddr:], newLicenseeSize))
+	h.NewLicensee = NewLicensee(asciiToStr(file[newLicenseeAddr:], newLicenseeSize))
 	h.SGBFlag = file[sgbFlagAddr]
 	h.CartType = CartType(file[cartTypeAddr])
 	if !h.CartType.IsSupported() {
@@ -237,13 +237,13 @@ func NewHeader(file []byte) (*Header, error) {
 	h.DestinationCode = DestCode(file[destCodeAddr])
 	h.RomVersion = file[romVerAddr]
 	h.HeaderChecksum = file[headerChecksumAddr]
-	h.GlobalChecksum = bitutil.To16(file[globalChecksumAddr+1], file[globalChecksumAddr])
+	h.GlobalChecksum = gbgoutil.To16(file[globalChecksumAddr+1], file[globalChecksumAddr])
 
 	return h, nil
 }
 
 func (h Header) String() string {
-	return fmt.Sprintf("Cartridge {Title: %s, ManufacturerCode: %s, CGBFlag: %d, NewLicense: %s, SGBFlag: %d, "+
+	return fmt.Sprintf("Cartridge Header {Title: %s, ManufacturerCode: %s, CGBFlag: %d, NewLicense: %s, SGBFlag: %d, "+
 		"CartType: %s, RomCode: %s, RamCode: %s, DestinationCode: %s, OldLicensee: %s, RomVersion: $%.2X, "+
 		"HeaderCheckSum: $%.2X, GlobalChecksum: $%.4X}", h.Title, h.ManufacturerCode, h.CGBFlag, h.NewLicensee,
 		h.SGBFlag, h.CartType, h.RomCode, h.RamCode, h.DestinationCode, h.OldLicensee, h.RomVersion, h.HeaderChecksum,
@@ -286,4 +286,15 @@ func (c *Cartridge) Write(address uint16, value uint8) {
 
 func (c *Cartridge) Reset() {
 	c.mbc.Reset()
+}
+
+// AsciiToStr Convert Byte Slice to String
+func asciiToStr(src []byte, length int) string {
+	sb := strings.Builder{}
+	str := make([]byte, length)
+	copy(str, src)
+
+	sb.Write(str)
+
+	return sb.String()
 }

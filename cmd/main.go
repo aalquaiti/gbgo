@@ -1,41 +1,61 @@
 package main
 
 import (
-	"flag"
+	"fmt"
 	"github.com/aalquaiti/gbgo/cartridge"
 	"github.com/aalquaiti/gbgo/cpu"
 	"github.com/aalquaiti/gbgo/io"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	log "github.com/sirupsen/logrus"
+	"os"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
-func main() {
-	flag.Parse()
-	file := "./roms/delme.gb"
-	//file := "./roms/tetris.gb"
-	// file := "./roms/DMG_ROM.bin"
+const file = "./roms/delme.gb"
+
+// gui Represents ebiten game
+type gui struct {
+	str string
+}
+
+func (g *gui) Update() error {
+	for i := 0; i < cpu.DMG_HZ/60; i++ {
+		g.str = cpu.Tick()
+	}
+
+	for g.str == "" {
+		g.str = cpu.Tick()
+	}
+
+	return nil
+}
+
+func (g *gui) Draw(screen *ebiten.Image) {
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %.2f", ebiten.CurrentTPS()))
+	//ebitenutil.DebugPrint(screen, g.str)
+	ebitenutil.DebugPrintAt(screen, g.str, 0, 20)
+}
+
+func (g *gui) Layout(width, height int) (int, int) {
+	return 160, 144
+}
+
+func init() {
+	log.SetOutput(os.Stdout)
 	cart, err := cartridge.NewCartridge(file)
 	if err != nil {
 		panic(err)
 	}
 	cpu.Init(cpu.DMG_MODE, io.NewBus(cart))
+	log.WithField("Cart Header", cart.Header).Info()
+}
 
-	//fmt.Println(cart.Header)
+func main() {
 
-	for i := 0; i < 100000; i++ {
-		cpu.Step()
-		//if io.Read(0xFF02) == 0x81 {
-		//	log.Fatal("Found it")
-		//}
+	ebiten.SetMaxTPS(60)
+	ebiten.SetWindowSize(640, 480)
+	if err := ebiten.RunGame(&gui{}); err != nil {
+		log.Fatal(err)
 	}
-
-	//for {
-	//	cpu.Step()
-	//}
-
-	//for {
-	//	cpu.Step()
-	//	if io.Read(0xFF02) == 0x81 {
-	//		log.Fatal("Found it")
-	//	}
-	//}
-
 }

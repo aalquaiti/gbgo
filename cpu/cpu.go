@@ -1,9 +1,8 @@
 package cpu
 
 import (
-	"fmt"
+	bit2 "github.com/aalquaiti/gbgo/gbgoutil"
 	"github.com/aalquaiti/gbgo/io"
-	bit2 "github.com/aalquaiti/gbgo/util/bitutil"
 )
 
 const (
@@ -92,22 +91,21 @@ func Reset() {
 // Step ticks a cpu until an op is executed
 func Step() {
 	steps++
-	currentPC := Reg.PC.Get()
-	af := Reg.AF.String()
-	bc := Reg.BC.String()
-	de := Reg.DE.String()
-	hl := Reg.HL.String()
-	pc := Reg.PC.String()
-	sp := Reg.SP.String()
-	output := Tick()
-	// Tick()
+	//currentPC := Reg.PC.Get()
+	//af := Reg.AF.String()
+	//bc := Reg.BC.String()
+	//de := Reg.DE.String()
+	//hl := Reg.HL.String()
+	//pc := Reg.PC.String()
+	//sp := Reg.SP.String()
+	//output := Tick()
+	Tick()
 
 	for ticks > 0 {
 		Tick()
 	}
 
-	fmt.Printf("%.04X:\t%-30s %s, %s, %s, %s, %s, %s\n",
-		currentPC, output, bc, de, hl, af, sp, pc)
+	//fmt.Printf("%.04X:\t%-30s %s, %s, %s, %s, %s, %s\n", currentPC, output, bc, de, hl, af, sp, pc)
 }
 
 // timer handles functionality related to divider and timer
