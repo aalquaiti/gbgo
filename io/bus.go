@@ -1,7 +1,6 @@
 package io
 
 import (
-	"github.com/aalquaiti/gbgo/gbgoutil"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,8 +15,11 @@ const (
 	VRamSize = 0x2000
 	WRamSize = 0x2000
 	OamSize  = 0xA0
-	IoSize   = 0x80
 	HRamSize = 0x7F
+)
+
+// Memory Addresses
+const (
 	DivAddr  = 0xFF04 // Divider Register Address
 	TimaAddr = 0xFF05 // Timer Counter Address
 	TmaAddr  = 0xFF06 // Timer Modulo Address
@@ -29,9 +31,14 @@ type Bus struct {
 	VRam      [VRamSize]uint8 // Video RAM
 	WRam      [WRamSize]uint8 // Work RAM
 	Oam       [OamSize]uint8  // Object Attribute Memory
-	IO        [IoSize]uint8   // IO Registers
-	HRam      [HRamSize]uint8 // High RAM
-	IE        uint8           // Interrupt Enable Register
+
+	// IO Registers
+	Time TimeReg
+	IF   IF
+
+	//IO        [IoSize]uint8   // IO Registers
+	HRam [HRamSize]uint8 // High RAM
+	IE   IE              // Interrupt Enable Register
 }
 
 // NewBus Creates New Bus
@@ -47,7 +54,7 @@ func NewBus(cart Device) Bus {
 // 0xE000 to 0xFDFF		Echo. Mirrors 0xC000 to 0xDFFF
 // 0xFE00 to 0xFE9F		Object Attribute Table (Oam)
 // 0xFEA0 to 0xFEFF		Unusable
-// 0xFF00 to 0xFF7F		IO Registers (of which 0xFF40 to 0xFF4B handled by PPU)
+// 0xFF00 to 0xFF7F		IO Registers
 // 0xFF80 to 0xFFFE		High RAM (HRam)
 // 0xFFFF				Interrupt Enable Register (IE)
 func (b *Bus) Read(address uint16) uint8 {
@@ -85,7 +92,19 @@ func (b *Bus) Read(address uint16) uint8 {
 	case address <= 0xFF7F:
 		// TODO: remove print
 		//fmt.Printf("Reading from IO [%.4X]=%.4X ", address, b.IO[address&0x7F])
-		return b.IO[address&0x7F]
+		switch address {
+		case DivAddr:
+			return b.Time.Div
+		case TimaAddr:
+			return b.Time.Tima
+		case TmaAddr:
+			return b.Time.Tma
+		case TacAddr:
+			return b.Time.Tac
+		}
+		// TODO handle other IO registers
+		log.Debugf("bus-read: Unsupported IO Register $%.4X", address)
+		return 0
 	// HRAM
 	case address <= 0xFFFE:
 		// TODO: remove print
@@ -93,7 +112,7 @@ func (b *Bus) Read(address uint16) uint8 {
 		return b.HRam[address&0x7F]
 	// IE
 	default:
-		return b.IE
+		return uint8(b.IE)
 	}
 }
 
@@ -140,7 +159,7 @@ func (b *Bus) Write(address uint16, value uint8) {
 	// WRAM Echo
 	case address <= 0xFDFF:
 		// address is AND with 0x1DFF as the echo does not mirror
-		// the whole WRAM address
+		// the whole WRam address
 		b.WRam[address&0x1DFF] = value
 	// OAM
 	case address <= 0xFE9F:
@@ -156,17 +175,21 @@ func (b *Bus) Write(address uint16, value uint8) {
 	// IO
 	case address <= 0xFF7F:
 
-		address &= 0x7F
-
-		// When Divider Register is accessed, it is reset
-		if address == 0x04 {
-			b.IO[address] = 0
-		} else {
-			// TODO remove print
-			//fmt.Printf("Writing to IO [$FF%.2X]=%.4X ", address, value)
-			b.IO[address] = value
+		log.Debugf("Writing: IO [$%.4X]=$%.4X", address, value)
+		switch address {
+		case DivAddr:
+			// When Divider Register is accessed, it is reset
+			b.Time.Div = 0
+		case TimaAddr:
+			b.Time.Tima = value
+		case TmaAddr:
+			b.Time.Tma = value
+		case TacAddr:
+			b.Time.Tac = value
+		default:
+			// TODO handle other IO Registers
+			log.Debugf("bus-write: Unsupported IO Register $%.4X", address)
 		}
-
 	// HRam
 	case address <= 0xFFFE:
 		// TODO remove print
@@ -174,7 +197,7 @@ func (b *Bus) Write(address uint16, value uint8) {
 		b.HRam[address&0x7F] = value
 	// IE
 	default:
-		b.IE = value
+		b.IE = IE(value)
 	}
 }
 
@@ -184,120 +207,8 @@ func (b *Bus) Write16(address uint16, value uint16) {
 	b.Write(address+1, uint8(value>>8))
 }
 
-// region HelperFunctions
-
 // InterruptPending checks if an interrupt is pending, by ANDing the value of Interrupt Enable Register (IE) with the
 // value of Interrupt Flag (IF)
 func (b *Bus) InterruptPending() bool {
-	return (b.IE & b.IO[0x0F]) != 0
+	return (uint8(b.IE) & uint8(b.IF)) != 0
 }
-
-// IsVBlank determines if VBlank Interrupt is Enabled
-func (b *Bus) IsVBlank() bool {
-	return gbgoutil.IsBitSet(b.IE, 0)
-}
-
-func (b *Bus) SetVBlank(enable bool) {
-	b.IE = gbgoutil.SetBit(b.IE, 0, enable)
-}
-
-// IsLCDStat determines if LCD Status Interrupt is Enabled
-func (b *Bus) IsLCDStat() bool {
-	return gbgoutil.IsBitSet(b.IE, 1)
-}
-
-func (b *Bus) SetLCDStat(enable bool) {
-	b.IE = gbgoutil.SetBit(b.IE, 1, enable)
-}
-
-// IsTimerInt determines if Timer Interrupt is Enabled
-func (b *Bus) IsTimerInt() bool {
-	return gbgoutil.IsBitSet(b.IE, 2)
-}
-
-func (b *Bus) SetTimerInt(enable bool) {
-	b.IE = gbgoutil.SetBit(b.IE, 2, enable)
-}
-
-// IsSerialInt determines if Serial Interrupt is Enabled
-func (b *Bus) IsSerialInt() bool {
-	return gbgoutil.IsBitSet(b.IE, 3)
-}
-
-func (b *Bus) SetSerialInt(enable bool) {
-	b.IE = gbgoutil.SetBit(b.IE, 3, enable)
-}
-
-// IsJoypadInt determines if Joypad Interrupt is Enabled
-func (b *Bus) IsJoypadInt() bool {
-	return gbgoutil.IsBitSet(b.IE, 4)
-}
-
-func (b *Bus) SetJoypad(enable bool) {
-	b.IE = gbgoutil.SetBit(b.IE, 4, enable)
-}
-
-// IrqVBlank determines if VBlank Interrupt is Requested
-func (b *Bus) IrqVBlank() bool {
-	return gbgoutil.IsBitSet(b.IO[0x0F], 0)
-}
-
-func (b *Bus) SetIrQVblank(enable bool) {
-	b.IO[0x0F] = gbgoutil.SetBit(b.IO[0x0F], 0, enable)
-}
-
-// IrqLCDStat determines if LCD Status Interrupt is Requested
-func (b *Bus) IrqLCDStat() bool {
-	return gbgoutil.IsBitSet(b.IO[0x0F], 1)
-}
-
-func (b *Bus) SetIRQLCDStat(enable bool) {
-	b.IO[0x0F] = gbgoutil.SetBit(b.IO[0x0F], 1, enable)
-}
-
-// IrqTimer determines if Timer Interrupt is Requested
-func (b *Bus) IrqTimer() bool {
-	return gbgoutil.IsBitSet(b.IO[0x0F], 2)
-}
-
-func (b *Bus) SetIRQTimer(enable bool) {
-	b.IO[0x0F] = gbgoutil.SetBit(b.IO[0x0F], 2, enable)
-}
-
-// IrqSerial determines if Serial Interrupt is Requested
-func (b *Bus) IrqSerial() bool {
-	return gbgoutil.IsBitSet(b.IO[0x0F], 3)
-}
-
-func (b *Bus) SetIrqSerial(enable bool) {
-	b.IO[0x0F] = gbgoutil.SetBit(b.IO[0x0F], 3, enable)
-}
-
-// IrqJoyPad determines if JoyPad Interrupt is Requested
-func (b *Bus) IrqJoyPad() bool {
-	return gbgoutil.IsBitSet(b.IO[0x0F], 4)
-}
-
-func (b *Bus) SetIrqJoyPad(enable bool) {
-	b.IO[0x0F] = gbgoutil.SetBit(b.IO[0x0F], 4, enable)
-}
-
-// IncDIV Increment Divider Register by one.
-// This is used instead of Write() function as writing to the Divider Register using that function
-// resets its value, as an expected behaviour by the game boy io
-func (b *Bus) IncDIV() {
-	b.IO[DivAddr&0xFF]++
-}
-
-// IsTacTimerEnabled determines Timer Control (TAC) bit 2 to determine if Timer is Enabled. When enabled, Timer Counter
-// can be incremented. This does not affect Divider Register
-func (b *Bus) IsTacTimerEnabled() bool {
-	return gbgoutil.IsBitSet(b.IO[TacAddr&0xFF], 2)
-}
-
-// GetTacClockSelect Retrieve Timer Control (TAC) bits 0 and 1 that determine the Clock Selected for Timer Counter
-func (b *Bus) GetTacClockSelect() uint8 {
-	return b.IO[TacAddr&0xFF] & 0b11
-}
-
-// endregion

@@ -113,7 +113,7 @@ func timer() {
 	// When count reaches Divider rate
 	if cycles&DIV_RATE == DIV_RATE {
 		// TODO emulate CGB double speed effect
-		bus.IncDIV()
+		bus.Time.IncDIV()
 	}
 
 	// When count reaches Timer rate, increment Timer Counter.
@@ -124,7 +124,7 @@ func timer() {
 	// 10: CPU Clock / 0x40   = 0x4000 Hz
 	// 11: CPU Clock / 0x100  = 0x1000 Hz
 	timeRate := Frequency()
-	switch bus.GetTacClockSelect() {
+	switch bus.Time.GetTacClockSelect() {
 	case 0b00:
 		timeRate /= 0x1000
 	case 0b01:
@@ -146,9 +146,9 @@ func timer() {
 		// set Timer counter to value stored in TMA and request a
 		// Timer interrupt
 		timaCount := bus.Read(io.TimaAddr)
-		if bus.IsTacTimerEnabled() && timaCount == 0xFF {
+		if bus.Time.IsTacTimerEnabled() && timaCount == 0xFF {
 			bus.Write(io.TimaAddr, bus.Read(io.TmaAddr))
-			bus.SetIRQTimer(true)
+			bus.IF.SetIRQTimer(true)
 		} else {
 			bus.Write(io.TimaAddr, timaCount+1)
 		}
@@ -190,21 +190,21 @@ func irq() {
 		ticks += 5
 		push16(bit2.From16(Reg.PC.Get()))
 	}
-	if bus.IsVBlank() && bus.IrqVBlank() {
-		bus.SetIrQVblank(false)
+	if bus.IE.IsVBlank() && bus.IF.IrqVBlank() {
+		bus.IF.SetIrQVblank(false)
 
 		Reg.PC.Set(0x40)
-	} else if bus.IsLCDStat() && bus.IrqLCDStat() {
-		bus.SetIRQLCDStat(false)
+	} else if bus.IE.IsLCDStat() && bus.IF.IrqLCDStat() {
+		bus.IF.SetIRQLCDStat(false)
 		Reg.PC.Set(0x48)
-	} else if bus.IsTimerInt() && bus.IrqTimer() {
-		bus.SetIRQTimer(false)
+	} else if bus.IE.IsTimerInt() && bus.IF.IrqTimer() {
+		bus.IF.SetIRQTimer(false)
 		Reg.PC.Set(0x50)
-	} else if bus.IsSerialInt() && bus.IrqSerial() {
-		bus.SetIrqSerial(false)
+	} else if bus.IE.IsSerialInt() && bus.IF.IrqSerial() {
+		bus.IF.SetIrqSerial(false)
 		Reg.PC.Set(0x58)
-	} else if bus.IsJoypadInt() && bus.IrqJoyPad() {
-		bus.SetIrqJoyPad(false)
+	} else if bus.IE.IsJoypadInt() && bus.IF.IrqJoyPad() {
+		bus.IF.SetIrqJoyPad(false)
 		Reg.PC.Set(0x60)
 	}
 

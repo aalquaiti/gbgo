@@ -32,7 +32,7 @@ func (g *gui) Update() error {
 }
 
 func (g *gui) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %.2f", ebiten.CurrentTPS()))
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %.2f", ebiten.CurrentFPS()))
 	//ebitenutil.DebugPrint(screen, g.str)
 	ebitenutil.DebugPrintAt(screen, g.str, 0, 20)
 }
