@@ -243,7 +243,7 @@ func NewHeader(file []byte) (*Header, error) {
 }
 
 func (h Header) String() string {
-	return fmt.Sprintf("Cartridge Header {Title: %s, ManufacturerCode: %s, CGBFlag: %d, NewLicense: %s, SGBFlag: %d, "+
+	return fmt.Sprintf("cart Header {Title: %s, ManufacturerCode: %s, CGBFlag: %d, NewLicense: %s, SGBFlag: %d, "+
 		"CartType: %s, RomCode: %s, RamCode: %s, DestinationCode: %s, OldLicensee: %s, RomVersion: $%.2X, "+
 		"HeaderCheckSum: $%.2X, GlobalChecksum: $%.4X}", h.Title, h.ManufacturerCode, h.CGBFlag, h.NewLicensee,
 		h.SGBFlag, h.CartType, h.RomCode, h.RamCode, h.DestinationCode, h.OldLicensee, h.RomVersion, h.HeaderChecksum,

@@ -145,12 +145,12 @@ func timer() {
 		// When Timer is Enabled and Timer Counter overflow,
 		// set Timer counter to value stored in TMA and request a
 		// Timer interrupt
-		timaCount := bus.Read(io.TimaAddr)
+		timaCount := bus.Read(io.AddrTima)
 		if bus.Time.IsTacTimerEnabled() && timaCount == 0xFF {
-			bus.Write(io.TimaAddr, bus.Read(io.TmaAddr))
+			bus.Write(io.AddrTima, bus.Read(io.AddrTma))
 			bus.IF.SetIRQTimer(true)
 		} else {
-			bus.Write(io.TimaAddr, timaCount+1)
+			bus.Write(io.AddrTima, timaCount+1)
 		}
 
 	}

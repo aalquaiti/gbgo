@@ -5,16 +5,6 @@ import "github.com/aalquaiti/gbgo/gbgoutil"
 // IE Represents Interrupt Enable Register
 type IE uint8
 
-// IF Represents Interrupt Flag Register
-type IF uint8
-
-type TimeReg struct {
-	Div  uint8
-	Tima uint8
-	Tma  uint8
-	Tac  uint8
-}
-
 // IsVBlank determines if VBlank Interrupt is Enabled
 func (i *IE) IsVBlank() bool {
 	return gbgoutil.IsBitSet(uint8(*i), 0)
@@ -59,6 +49,9 @@ func (i *IE) IsJoypadInt() bool {
 func (i *IE) SetJoypad(enable bool) {
 	*i = IE(gbgoutil.SetBit(uint8(*i), 4, enable))
 }
+
+// IF Represents Interrupt Flag Register
+type IF uint8
 
 // IrqVBlank determines if VBlank Interrupt is Requested
 func (i *IF) IrqVBlank() bool {
@@ -105,20 +98,27 @@ func (i *IF) SetIrqJoyPad(enable bool) {
 	*i = IF(gbgoutil.SetBit(uint8(*i), 4, enable))
 }
 
+type TimeReg struct {
+	div  uint8
+	tima uint8
+	tma  uint8
+	tac  uint8
+}
+
 // IncDIV Increment Divider Register by one.
 // This is used instead of writing to memory as writing to avoid reseting its value, as an expected behaviour
 // by the game boy io
 func (t *TimeReg) IncDIV() {
-	t.Div++
+	t.div++
 }
 
 // IsTacTimerEnabled determines Timer Control (TAC) bit 2 to determine if Timer is Enabled. When enabled, Timer Counter
 // can be incremented. This does not affect Divider Register
 func (t *TimeReg) IsTacTimerEnabled() bool {
-	return gbgoutil.IsBitSet(t.Tac, 2)
+	return gbgoutil.IsBitSet(t.tac, 2)
 }
 
 // GetTacClockSelect Retrieve Timer Control (TAC) bits 0 and 1 that determine the Clock Selected for Timer Counter
 func (t *TimeReg) GetTacClockSelect() uint8 {
-	return t.Tac & 0b11
+	return t.tac & 0b11
 }
