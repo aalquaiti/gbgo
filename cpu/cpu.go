@@ -1,26 +1,24 @@
 package cpu
 
 import (
-	bit2 "github.com/aalquaiti/gbgo/gbgoutil"
 	"github.com/aalquaiti/gbgo/io"
 )
 
 const (
-	INST_SIZE = 0x100      // Instruction Size
-	DMG_HZ    = 0x100000   // Game Boy Frequency (m-ticks)
-	CGB_HZ    = DMG_HZ * 2 // Game Boy Color Frequency (m-ticks)
-	DIV_RATE  = 0xFFF      // Divider Increment Rate
+	DMG_HZ   = 0x100000   // Game Boy Frequency (m-ticks)
+	CGB_HZ   = DMG_HZ * 2 // Game Boy Color Frequency (m-ticks)
+	DIV_RATE = 0xFFF      // Divider Increment Rate
 )
 
 // Mode Game Boy CPU Mode
 type Mode int
 
 const (
-	DMG_MODE Mode = iota
+	DMG_MODE Mode = iota + 1
 	CGB_MODE
 )
 
-var (
+type CPU struct {
 	mode   Mode
 	bus    io.Bus
 	ticks  uint8  // m-ticks remaining for an instruction
@@ -28,13 +26,12 @@ var (
 	steps  uint32 // Counts how many instructions executed
 	Reg    Register
 	flags  *RegF
-	curOP  uint8 // Current Op to execute. Used in cpu fetch phase
-	inst   [INST_SIZE]Instruction
-	cbInst [INST_SIZE]Instruction
-)
+	curOP  OpCode // Current Op to execute. Used in cpu fetch phase
+	inst   [OPCodeSize]OpCode
+	cbInst [OPCodeSize]OpCode
 
-// Variables that are used by CPU to help perform some of the instructions
-var (
+	// Variables that are used by CPU to help perform some of the instructions
+
 	// IsHalt Used by HALT instruction to inform the cpu to halt until an interrupt occurs. This helps with interruption
 	// handling that breaks the halt, and to emulate the HALT bug
 	isHalt bool
@@ -42,78 +39,77 @@ var (
 	//  Used by EI instruction to set IME. The EI has a delay one of one cycle, so IME will be set to one after the
 	// execution of the next instruction following EI.
 	performIME bool
-)
 
-// Variables that should be treated as immutable.
-// Access should be through functions
-var (
+	// Variables that should be treated as immutable.
+	// Access should be through functions
+
 	freq uint32
-)
-
-func Frequency() uint32 {
-	return freq
 }
 
 // Init Initialise CPU
-func Init(m Mode, b io.Bus) {
+func NewCPU(mode Mode, bus io.Bus) *CPU {
 	// TODO use different CPU mode
-	mode = m
-	bus = b
-	initInstructions()
-	Reset()
+	cpu := &CPU{
+		mode: mode,
+		bus:  bus,
+	}
+	cpu.initInstructions()
+	cpu.Reset()
+
+	return cpu
 }
 
 // Reset resets CPU to pre-start state
-func Reset() {
-	ticks = 0
-	cycles = 0
-	Reg = NewRegister()
-	flags, _ = Reg.F.(*RegF)
-	curOP = 0
-	isHalt = false
+func (c *CPU) Reset() {
+	c.ticks = 0
+	c.cycles = 0
+	c.Reg = NewRegister()
+	c.flags, _ = c.Reg.F.(*RegF)
+	c.curOP = c.inst[0x00]
+	c.isHalt = false
 
 	// Power-Up Sequence for DMG
 	// TODO Add power-up sequence of CGB
-	Reg.A.Set(0x01)
-	// TODO Reg F value depends on header checksum. Make amends according
+	c.Reg.A.Set(0x01)
+	// TODO c.Reg F value depends on header checksum. Make amends according
 	// Refer to https://gbdev.io/pandocs/Power_Up_Sequence.html
-	Reg.F.Set(0xB0)
-	Reg.B.Set(0x00)
-	Reg.C.Set(0x13)
-	Reg.D.Set(0x00)
-	Reg.E.Set(0xD8)
-	Reg.H.Set(0x01)
-	Reg.L.Set(0x4D)
-	Reg.PC.Set(0x100)
-	Reg.SP.Set(0xFFFE)
+	c.Reg.F.Set(0xB0)
+	c.Reg.B.Set(0x00)
+	c.Reg.C.Set(0x13)
+	c.Reg.D.Set(0x00)
+	c.Reg.E.Set(0xD8)
+	c.Reg.H.Set(0x01)
+	c.Reg.L.Set(0x4D)
+	c.Reg.PC.Set(0x100)
+	c.Reg.SP.Set(0xFFFE)
 }
 
 // Step ticks a cpu until an op is executed
-func Step() {
-	steps++
-	//currentPC := Reg.PC.Get()
-	//af := Reg.AF.String()
-	//bc := Reg.BC.String()
-	//de := Reg.DE.String()
-	//hl := Reg.HL.String()
-	//pc := Reg.PC.String()
-	//sp := Reg.SP.String()
+func (c *CPU) Step() {
+	c.steps++
+	//currentPC := c.Reg.PC.Get()
+	//af := c.Reg.AF.String()
+	//bc := c.Reg.BC.String()
+	//de := c.Reg.DE.String()
+	//hl := c.Reg.HL.String()
+	//pc := c.Reg.PC.String()
+	//sp := c.Reg.SP.String()
 	//output := Tick()
-	Tick()
+	c.Tick()
 
-	for ticks > 0 {
-		Tick()
+	for c.ticks > 0 {
+		c.Tick()
 	}
 
 	//fmt.Printf("%.04X:\t%-30s %s, %s, %s, %s, %s, %s\n", currentPC, output, bc, de, hl, af, sp, pc)
 }
 
 // timer handles functionality related to divider and timer
-func timer() {
+func (c *CPU) timer() {
 	// When count reaches Divider rate
-	if cycles&DIV_RATE == DIV_RATE {
+	if c.cycles&DIV_RATE == DIV_RATE {
 		// TODO emulate CGB double speed effect
-		bus.Time.IncDIV()
+		c.bus.Time.IncDIV()
 	}
 
 	// When count reaches Timer rate, increment Timer Counter.
@@ -123,8 +119,8 @@ func timer() {
 	// 01: CPU Clock / 0x10   = 0x10000 Hz
 	// 10: CPU Clock / 0x40   = 0x4000 Hz
 	// 11: CPU Clock / 0x100  = 0x1000 Hz
-	timeRate := Frequency()
-	switch bus.Time.GetTacClockSelect() {
+	timeRate := c.freq
+	switch c.bus.Time.GetTacClockSelect() {
 	case 0b00:
 		timeRate /= 0x1000
 	case 0b01:
@@ -139,35 +135,35 @@ func timer() {
 	// This will shows if the time should be incremented
 	// TODO: Add an example for clarity
 	timeRate -= 1
-	timeReached := cycles&timeRate == timeRate
+	timeReached := c.cycles&timeRate == timeRate
 
 	if timeReached {
 		// When Timer is Enabled and Timer Counter overflow,
 		// set Timer counter to value stored in TMA and request a
 		// Timer interrupt
-		timaCount := bus.Read(io.AddrTima)
-		if bus.Time.IsTacTimerEnabled() && timaCount == 0xFF {
-			bus.Write(io.AddrTima, bus.Read(io.AddrTma))
-			bus.IF.SetIRQTimer(true)
+		timaCount := c.bus.Read(io.AddrTima)
+		if c.bus.Time.IsTacTimerEnabled() && timaCount == 0xFF {
+			c.bus.Write(io.AddrTima, c.bus.Read(io.AddrTma))
+			c.bus.IF.SetIRQTimer(true)
 		} else {
-			bus.Write(io.AddrTima, timaCount+1)
+			c.bus.Write(io.AddrTima, timaCount+1)
 		}
 
 	}
 }
 
 // irq handles Interrupt request
-func irq() {
+func (c *CPU) irq() {
 
 	// Checks is Master Interrupt is enabled,
 	// Ignores interrupts if disabled
-	if !Reg.IME {
+	if !c.Reg.IME {
 
 		// Having an interrupt pending breaks the halt loop if one was requested through HALT operation
 		// See more details in halt() function
-		if bus.InterruptPending() {
+		if c.bus.InterruptPending() {
 			// TODO simulate the halt bug by reading the instruction the follow HALT twice
-			isHalt = false
+			c.isHalt = false
 		}
 
 		return
@@ -175,10 +171,10 @@ func irq() {
 
 	// Disable further Interrupts. This is a CPU behaviour when an interrupt is to be executed. So further interrupts
 	// must be enabled by the program (Usually using RETI instruction when returning from an interrupt vector)
-	Reg.IME = false
+	c.Reg.IME = false
 
 	// CPU will continue activity it was paused by a HALt instruction
-	isHalt = false
+	c.isHalt = false
 	// TODO check if isHalt is true, follows after IE instruction and an interrupt is pending
 	// In this case, simulate the halt bug by setting the PC back to the halt instruction
 
@@ -186,26 +182,27 @@ func irq() {
 	// Two m-cyles before pushing PC
 	// Two m-cycles after pushing PC
 	// One m-cycle after setting handler vector
-	if bus.InterruptPending() {
-		ticks += 5
-		push16(bit2.From16(Reg.PC.Get()))
+	if c.bus.InterruptPending() {
+		c.ticks += 5
+		// TODO uncomment
+		//push16(gbgoutil.From16(c.Reg.PC.Get()))
 	}
-	if bus.IE.IsVBlank() && bus.IF.IrqVBlank() {
-		bus.IF.SetIrQVblank(false)
+	if c.bus.IE.IsVBlank() && c.bus.IF.IrqVBlank() {
+		c.bus.IF.SetIrQVblank(false)
 
-		Reg.PC.Set(0x40)
-	} else if bus.IE.IsLCDStat() && bus.IF.IrqLCDStat() {
-		bus.IF.SetIRQLCDStat(false)
-		Reg.PC.Set(0x48)
-	} else if bus.IE.IsTimerInt() && bus.IF.IrqTimer() {
-		bus.IF.SetIRQTimer(false)
-		Reg.PC.Set(0x50)
-	} else if bus.IE.IsSerialInt() && bus.IF.IrqSerial() {
-		bus.IF.SetIrqSerial(false)
-		Reg.PC.Set(0x58)
-	} else if bus.IE.IsJoypadInt() && bus.IF.IrqJoyPad() {
-		bus.IF.SetIrqJoyPad(false)
-		Reg.PC.Set(0x60)
+		c.Reg.PC.Set(0x40)
+	} else if c.bus.IE.IsLCDStat() && c.bus.IF.IrqLCDStat() {
+		c.bus.IF.SetIRQLCDStat(false)
+		c.Reg.PC.Set(0x48)
+	} else if c.bus.IE.IsTimerInt() && c.bus.IF.IrqTimer() {
+		c.bus.IF.SetIRQTimer(false)
+		c.Reg.PC.Set(0x50)
+	} else if c.bus.IE.IsSerialInt() && c.bus.IF.IrqSerial() {
+		c.bus.IF.SetIrqSerial(false)
+		c.Reg.PC.Set(0x58)
+	} else if c.bus.IE.IsJoypadInt() && c.bus.IF.IrqJoyPad() {
+		c.bus.IF.SetIrqJoyPad(false)
+		c.Reg.PC.Set(0x60)
 	}
 
 }
@@ -215,58 +212,54 @@ func irq() {
 // Goes through a fetch-decode-execute cycle
 // Returns Representation of performed instruction if completed, or empty
 // string if in the middle of execution
-func Tick() string {
+func (c *CPU) Tick() {
 
 	// Count is important for handling time. Therefore, it should not
 	// exceed cpu frequency value
-	if cycles == Frequency() {
-		cycles = 0
+	if c.cycles == c.freq {
+		c.cycles = 0
 	}
 
 	// m-ticks needs to be finished before executing
 	// the cycle again
-	if ticks > 0 {
-		advance()
-		return ""
+	if c.ticks > 0 {
+		c.advance()
 	}
 
 	// TODO check if timer should be handled with each tick, instead with
 	// the current simulated bulks of ticks
-	timer()
-	irq()
+	c.timer()
+	c.irq()
 
 	// Check if halt was requested (using HALT operation)
 	// Halt can be broken if an interrupt occurs
-	if isHalt {
-		advance()
-		return ""
+	if c.isHalt {
+		c.advance()
 	}
 
 	// Fetch instruction
-	curOP = bus.Read(Reg.PC.Get())
-	Reg.PC.Inc()
+	c.curOP = c.inst[c.bus.Read(c.Reg.PC.Get())]
+	c.Reg.PC.Inc()
 
 	// Decode
-	instruction := inst[curOP]
 
 	// Execute Operation
 	// TODO de-assemble and print executed operation
-	ticks += instruction.ticks
-	output := instruction.execute()
+	c.ticks += c.curOP.ticks
+	// TODO uncomment
+	//c.curOP.execute()
 
 	// Emulates the IE instruction Delay
-	if performIME == true && curOP != 0xFB {
-		Reg.IME = true
-		performIME = false
+	if c.performIME == true && c.curOP.code != 0xFB {
+		c.Reg.IME = true
+		c.performIME = false
 	}
 
-	advance()
-
-	return output
+	c.advance()
 }
 
 // advance a cpu tick
-func advance() {
-	ticks--
-	cycles++
+func (c *CPU) advance() {
+	c.ticks--
+	c.cycles++
 }

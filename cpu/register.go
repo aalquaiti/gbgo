@@ -3,28 +3,34 @@ package cpu
 import (
 	"fmt"
 	"github.com/aalquaiti/gbgo/gbgoutil"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
+
+// Reg represents a generic type of Register
+type Reg interface {
+	fmt.Stringer
+	Name() string
+	Inc()
+	Dec()
+}
 
 // Reg8 represents an 8-bit Register
 type Reg8 interface {
-	fmt.Stringer
+	Reg
+
 	Val() *uint8 // Pointer to the variable holding the value
 	Name() string
 	Get() uint8
 	Set(uint8) Reg8
-	Inc() Reg8
-	Dec() Reg8
 }
 
 // Reg16 represents a 16-bit Register
 type Reg16 interface {
-	fmt.Stringer
+	Reg
+
 	Name() string
 	Get() uint16
 	Set(uint16) Reg16
-	Inc() Reg16
-	Dec() Reg16
 }
 
 // Register represents all registers in a CPU
@@ -89,16 +95,12 @@ func (r *reg8Impl) Set(value uint8) Reg8 {
 	return r
 }
 
-func (r *reg8Impl) Inc() Reg8 {
+func (r *reg8Impl) Inc() {
 	r.value++
-
-	return r
 }
 
-func (r *reg8Impl) Dec() Reg8 {
+func (r *reg8Impl) Dec() {
 	r.value--
-
-	return r
 }
 
 func (r reg8Impl) String() string {
@@ -126,16 +128,12 @@ func (r *reg16Impl) Set(value uint16) Reg16 {
 	return r
 }
 
-func (r *reg16Impl) Inc() Reg16 {
+func (r *reg16Impl) Inc() {
 	r.value++
-
-	return r
 }
 
-func (r *reg16Impl) Dec() Reg16 {
+func (r *reg16Impl) Dec() {
 	r.value--
-
-	return r
 }
 
 func (r reg16Impl) String() string {
@@ -165,16 +163,12 @@ func (r *reg16From8Impl) Set(value uint16) Reg16 {
 	return r
 }
 
-func (r *reg16From8Impl) Inc() Reg16 {
+func (r *reg16From8Impl) Inc() {
 	r.Set(r.Get() + 1)
-
-	return r
 }
 
-func (r *reg16From8Impl) Dec() Reg16 {
+func (r *reg16From8Impl) Dec() {
 	r.Set(r.Get() - 1)
-
-	return r
 }
 
 func (r reg16From8Impl) String() string {
@@ -204,18 +198,14 @@ func (r *RegF) Set(value uint8) Reg8 {
 	return (Reg8)(r)
 }
 
-func (r *RegF) Inc() Reg8 {
+func (r *RegF) Inc() {
 	// Should not be used. Implemented to match Reg8 interface
-	log.Fatal("Inc() for RegF should not be used")
-
-	return r
+	logrus.Fatal("Inc() for RegF should not be used")
 }
 
-func (r *RegF) Dec() Reg8 {
+func (r *RegF) Dec() {
 	// Should not be used. Implemented to match Reg8 interface
-	log.Fatal("Dec() for RegF should not be used")
-
-	return r
+	logrus.Fatal("Dec() for RegF should not be used")
 }
 
 func (r RegF) String() string {

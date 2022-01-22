@@ -2,13 +2,13 @@ package io
 
 import (
 	"github.com/aalquaiti/gbgo/gbgoutil"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // Device represents an IO Device
 type Device interface {
-	Read(uint16) uint8
-	Write(uint16, uint8)
+	Read(address uint16) uint8
+	Write(address uint16, value uint8)
 	Reset()
 }
 
@@ -104,7 +104,7 @@ func (b *Bus) Read(address uint16) uint8 {
 	case address <= 0xFEFF:
 		// Do nothing
 		// TODO add behaviour related to OAM access
-		log.Warnf("Reading from unusable memory at address $%.4X", address)
+		logrus.Warnf("Reading from unusable memory at address $%.4X", address)
 		return 0
 
 	// IO
@@ -125,14 +125,14 @@ func (b *Bus) Read(address uint16) uint8 {
 	// HRAM
 	case address <= 0xFFFE:
 		value := b.HRam[address&0x7F]
-		log.Debugf("bus: Reading HRAM [%.4X]=%.4X", address, value)
+		logrus.Debugf("bus: Reading HRAM [%.4X]=%.4X", address, value)
 		return value
 	// IE
 	case address == 0xFFFF:
 		return uint8(b.IE)
 	}
 
-	log.Debugf("bus: Read was not mapped to Device at $%.4X", address)
+	logrus.Debugf("bus: Read was not mapped to Device at $%.4X", address)
 	return 0
 }
 
@@ -188,7 +188,7 @@ func (b *Bus) Write(address uint16, value uint8) {
 	case address <= 0xFEFF:
 		// Do nothing
 		// TODO add behaviour related to OAM access
-		log.WithFields(log.Fields{
+		logrus.WithFields(logrus.Fields{
 			"Address": address,
 			"Value":   value,
 		}).Warn("bus: Writing to unusable memory")
