@@ -1,10 +1,12 @@
 package cpu
 
-import "testing"
+import (
+	"github.com/aalquaiti/gbgo/io"
+	"testing"
+)
 
 func TestRegFSet(t *testing.T) {
-	cpu := CPU{}
-	cpu.flags.Set(0b10111001)
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 
 	var expected uint8 = 0b10110000
 	var actual uint8 = cpu.flags.Get()
@@ -19,8 +21,7 @@ func TestRegFSet(t *testing.T) {
 func TestRegFGet(t *testing.T) {
 	// Regisger F is not supposed to be set directly, to ensure bitutil 0-3
 	// are always set to Zero
-	cpu := CPU{}
-	cpu.flags.Set(0b10111001)
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 
 	var expected uint8 = 0b10110000
 	var actual uint8 = cpu.flags.Get()
@@ -32,8 +33,7 @@ func TestRegFGet(t *testing.T) {
 }
 
 func TestRegFGetFlagZ(t *testing.T) {
-	cpu := CPU{}
-	cpu.flags.Set(0b11111111)
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 
 	var expected bool = true
 	var actual bool = cpu.flags.GetFlagZ()
@@ -45,7 +45,7 @@ func TestRegFGetFlagZ(t *testing.T) {
 }
 
 func TestRegFSetFlagZ(t *testing.T) {
-	cpu := CPU{}
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 	cpu.flags.Set(0xFF)
 	cpu.flags.SetFlagZ(false)
 	var expected uint8 = 0b01110000
@@ -68,8 +68,8 @@ func TestRegFSetFlagZ(t *testing.T) {
 }
 
 func TestRegFGetFlagN(t *testing.T) {
-	cpu := CPU{}
-	cpu.flags.Set(0b11111111)
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
+	cpu.flags.Set(0xFF)
 
 	var expected bool = true
 	var actual bool = cpu.flags.GetFlagN()
@@ -81,7 +81,7 @@ func TestRegFGetFlagN(t *testing.T) {
 }
 
 func TestRegFSetFlagN(t *testing.T) {
-	cpu := CPU{}
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 	cpu.flags.Set(0xFF)
 	cpu.flags.SetFlagN(false)
 	var expected uint8 = 0b10110000
@@ -104,8 +104,8 @@ func TestRegFSetFlagN(t *testing.T) {
 }
 
 func TestRegFGetFlagH(t *testing.T) {
-	cpu := CPU{}
-	cpu.flags.Set(0b11111111)
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
+	cpu.flags.Set(0xFF)
 
 	var expected bool = true
 	var actual bool = cpu.flags.GetFlagN()
@@ -117,7 +117,7 @@ func TestRegFGetFlagH(t *testing.T) {
 }
 
 func TestRegFSetFlagH(t *testing.T) {
-	cpu := CPU{}
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 	cpu.flags.Set(0xFF)
 	cpu.flags.SetFlagH(false)
 	var expected uint8 = 0b11010000
@@ -140,7 +140,7 @@ func TestRegFSetFlagH(t *testing.T) {
 }
 
 func TestRegFGetFlagC(t *testing.T) {
-	cpu := CPU{}
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 	cpu.flags.Set(0b11111111)
 
 	var expected bool = true
@@ -153,7 +153,7 @@ func TestRegFGetFlagC(t *testing.T) {
 }
 
 func TestRegFSetFlagC(t *testing.T) {
-	cpu := CPU{}
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 	cpu.flags.Set(0xFF)
 	cpu.flags.SetFlagC(false)
 	var expected uint8 = 0b11100000
@@ -176,7 +176,7 @@ func TestRegFSetFlagC(t *testing.T) {
 }
 
 func TestRegFAffectZH(t *testing.T) {
-	cpu := CPU{}
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 	var value uint8 = 0
 	// Test Half carry without value becoming zero
 	value = 0xF // i.e. 0b00001111
@@ -204,7 +204,7 @@ func TestRegFAffectZH(t *testing.T) {
 }
 
 func TestRegFAffectHC(t *testing.T) {
-	cpu := CPU{}
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 	var value uint8 = 0
 	// Test Half carry (Flag H) without Full carry (Flag C)
 	value = 0xF // i.e. 0b00001111
@@ -246,7 +246,7 @@ func TestRegFAffectHC(t *testing.T) {
 }
 
 func TestRegFAffectHC16(t *testing.T) {
-	cpu := CPU{}
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 	var value uint16 = 0
 	// Test Half carry (Flag H) without Full carry (Flag C)
 	value = 0xF00
@@ -288,7 +288,7 @@ func TestRegFAffectHC16(t *testing.T) {
 }
 
 func TestRegFGetBC(t *testing.T) {
-	cpu := CPU{}
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 	*cpu.Reg.B.Val() = 0xFE
 	*cpu.Reg.C.Val() = 0xFF
 	var expected uint16 = 0xFEFF
@@ -301,7 +301,7 @@ func TestRegFGetBC(t *testing.T) {
 }
 
 func TestRegisterSetBC(t *testing.T) {
-	cpu := CPU{}
+	cpu := NewCPU(DMG_MODE, io.NewBus(nil, nil))
 	var expected uint16 = 0xFEFF
 	cpu.Reg.BC.Set(expected)
 	var actual = cpu.Reg.BC.Get()

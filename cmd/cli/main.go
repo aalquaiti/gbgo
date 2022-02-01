@@ -21,5 +21,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("There is a result of %d lines", len(result))
+	for _, line := range result {
+		fmt.Println(line)
+	}
 }
